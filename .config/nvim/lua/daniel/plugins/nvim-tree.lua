@@ -15,7 +15,7 @@ return {
     -- configure nvim-tree
     nvimtree.setup({
       view = {
-        width = 35,
+        width = 30,
         relativenumber = false,
       },
       -- change folder arrow icons
@@ -26,8 +26,8 @@ return {
         icons = {
           glyphs = {
             folder = {
-              arrow_closed = "", -- arrow when folder is closed
-              arrow_open = "", -- arrow when folder is open
+              -- arrow_closed = "", -- arrow when folder is closed
+              -- arrow_open = "", -- arrow when folder is open
             },
           },
         },
@@ -54,10 +54,10 @@ return {
     local keymap = vim.keymap -- for conciseness
 
 		local api = require('nvim-tree.api')
-    keymap.set("n", "<leader>ee", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" }) -- toggle file explorer
-    keymap.set("n", "<leader>ef", "<cmd>NvimTreeFindFileToggle<CR>", { desc = "Toggle file explorer on current file" }) -- toggle file explorer on current file
-    keymap.set("n", "<leader>ec", "<cmd>NvimTreeCollapse<CR>", { desc = "Collapse file explorer" }) -- collapse file explorer
-    keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" }) -- refresh file explorer
+    keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" }) -- toggle file explorer
+    -- keymap.set("n", "<leader>ef", "<cmd>NvimTreeFindFileToggle<CR>", { desc = "Toggle file explorer on current file" }) -- toggle file explorer on current file
+    -- keymap.set("n", "<leader>ec", "<cmd>NvimTreeCollapse<CR>", { desc = "Collapse file explorer" }) -- collapse file explorer
+    -- keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" }) -- refresh file explorer
     keymap.set("n", "t", api.node.open.tab, { desc = "Open in new tab" }) -- refresh file explorer
   end,
 }

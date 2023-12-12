@@ -26,3 +26,20 @@ keymap.set("n", "<leader>tx", "<cmd>tabclose<CR>", { desc = "Close current tab" 
 keymap.set("n", "<leader>tn", "<cmd>tabn<CR>", { desc = "Go to next tab" }) --  go to next tab
 keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
 keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
+
+
+vim.api.nvim_set_keymap('n', 'L', '4j', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', 'H', '4k', {noremap = true, silent = true})
+
+
+local Terminal  = require('toggleterm.terminal').Terminal
+local lazygit = Terminal:new({ cmd = "lazygit", hidden = true , direction="float", 
+	on_open = function(_)
+		vim.cmd "startinsert!"
+	end,})
+
+function _lazygit_toggle()
+  lazygit:toggle()
+end
+
+vim.api.nvim_set_keymap("n", "<leader>hg", "<cmd>lua _lazygit_toggle()<CR>", {noremap = true, silent = true})
