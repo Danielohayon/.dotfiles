@@ -28,8 +28,8 @@ keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) 
 keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 
 
-vim.api.nvim_set_keymap('n', 'L', '4j', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('n', 'H', '4k', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', 'L', '5j', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', 'H', '5k', {noremap = true, silent = true})
 
 
 local Terminal  = require('toggleterm.terminal').Terminal
@@ -43,3 +43,29 @@ function _lazygit_toggle()
 end
 
 vim.api.nvim_set_keymap("n", "<leader>hg", "<cmd>lua _lazygit_toggle()<CR>", {noremap = true, silent = true})
+
+
+local opts = { noremap = true, silent = true }
+
+
+-- Navigate buffers
+keymap.set("n", "<S-E>", ":bnext<CR>", opts)
+keymap.set("n", "<S-W>", ":bprevious<CR>", opts)
+
+keymap.set("n", "<C-Up>", ":resize -2<CR>", opts)
+keymap.set("n", "<C-Down>", ":resize +2<CR>", opts)
+keymap.set("n", "<C-Left>", ":vertical resize -2<CR>", opts)
+keymap.set("n", "<C-Right>", ":vertical resize +2<CR>", opts)
+
+-- Insert --
+-- Press jk fast to exit insert mode 
+keymap.set("i", "jk", "<ESC>", opts)
+keymap.set("i", "kj", "<ESC>", opts)
+
+-- Move text up and down
+keymap.set("v", "<A-j>", ":m '>+1<CR>gv=gv", opts)
+keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", opts)
+keymap.set("v", "p", '"_dP', opts)
+-- Move text up and down
+keymap.set("n", "<A-j>", ":m .+1<CR>==", opts)
+keymap.set("n", "<A-k>", ":m .-2<CR>==", opts)

@@ -36,3 +36,5 @@ vim.diagnostic.config({
 })
 
 vim.opt.scrolloff = 10
+vim.cmd.colorscheme "catppuccin-macchiato" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
+
