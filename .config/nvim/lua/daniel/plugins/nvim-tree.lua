@@ -18,6 +18,9 @@ return {
         width = 30,
         relativenumber = false,
       },
+			update_focused_file = {
+				enable = true,
+			},
       -- change folder arrow icons
       renderer = {
         indent_markers = {
