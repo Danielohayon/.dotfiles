@@ -3,8 +3,9 @@ local opt = vim.opt
 opt.number = true
 
 -- tabs & indentation
-opt.tabstop = 2 -- 2 spaces for tabs (prettier default)
-opt.shiftwidth = 2 -- 2 spaces for indent width
+opt.tabstop = 4 -- 2 spaces for tabs (prettier default)
+opt.shiftwidth = 4 -- 2 spaces for indent width
+opt.expandtab = true
 
 -- line wrapping
 opt.wrap = false -- disable line wrapping
@@ -31,10 +32,8 @@ opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 opt.splitright = true -- split vertical window to the right
 opt.splitbelow = true -- split horizontal window to the bottom
 
-vim.diagnostic.config({
-	virtual_text = false,
-})
 
 vim.opt.scrolloff = 10
 vim.cmd.colorscheme "catppuccin-macchiato" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
 
+vim.opt.fillchars = {eob = " "}
