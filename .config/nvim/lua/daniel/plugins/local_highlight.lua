@@ -5,5 +5,6 @@ return {
 			file_types = {'python', 'cpp', 'lua', 'c', 'sh', 'bash', 'json'}, -- If this is given only attach to this
 			hlgroup = 'Search',
 		})
+		vim.opt.updatetime = 700
 	end,
 }
