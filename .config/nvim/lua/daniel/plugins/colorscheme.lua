@@ -19,4 +19,15 @@
 --   },
 -- }
 M = { "catppuccin/nvim", name = "catppuccin", priority = 1000 }
+-- function M.config()
+-- 	require("catppuccin").setup {
+-- 		color_overrides = {
+-- 			all = {
+-- 				base = "#303030",
+-- 				mantle = "#262626",
+-- 				crust = "#474747",
+-- 			}
+-- 		}
+-- 	}
+-- end
 return M
