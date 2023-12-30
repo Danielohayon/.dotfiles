@@ -40,3 +40,4 @@ vim.opt.fillchars = {eob = " "}
 
 -- Add line numbers to telescope Preview
 vim.cmd "autocmd User TelescopePreviewerLoaded setlocal number"
+vim.opt.signcolumn = "yes:2"
