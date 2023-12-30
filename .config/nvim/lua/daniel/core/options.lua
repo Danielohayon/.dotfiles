@@ -33,9 +33,11 @@ opt.splitright = true -- split vertical window to the right
 opt.splitbelow = true -- split horizontal window to the bottom
 
 
-vim.opt.scrolloff = 10
+vim.opt.scrolloff = 15
 vim.cmd.colorscheme "catppuccin-macchiato" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
 
 vim.opt.fillchars = {eob = " "}
 
+-- Add line numbers to telescope Preview
+vim.cmd "autocmd User TelescopePreviewerLoaded setlocal number"
 vim.opt.signcolumn = "yes:2"
