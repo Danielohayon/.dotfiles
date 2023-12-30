@@ -73,6 +73,8 @@ keymap.set("v", "p", '"_dP', opts)
 keymap.set("n", "<A-j>", ":m .+1<CR>==", opts)
 keymap.set("n", "<A-k>", ":m .-2<CR>==", opts)
 
+opts.desc = "Toggle Wrap"
+keymap.set("n", "<leader>lw", ":set invwrap<CR>", opts)
 
 -- Control Virtual Text
 vim.diagnostic.config({ 
