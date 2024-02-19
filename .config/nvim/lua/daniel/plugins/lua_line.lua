@@ -72,6 +72,10 @@ return {
 					{ "fileformat" },
 					{ "filetype" },
 				},
+                -- lualine_y = {},
+                -- lualine_z = {'%l:%c', '%p%%/%L'},
+                -- lualine_z = {'%p%%','%l/%L'},
+                lualine_z = {'%l/%L'},
 			},
 		})
 	end,
