@@ -36,7 +36,7 @@ return {
 			ft = "python",
 		},
 		{
-			"n",
+			",",
 			function()
 				require("dap").step_over()
 			end,
@@ -52,7 +52,7 @@ return {
 			ft = "python",
 		},
 		{
-			"N",
+			";",
 			function()
 				require("dap").step_into()
 			end,
@@ -131,10 +131,16 @@ return {
 			desc = "Get Session",
 			ft = "python",
 		},
+		{ "<leader>dls", function() require'telescope'.extensions.dap.frames{} end, desc = "List Stack Frames", ft = "python",},
+		{ "<leader>dlb", function() require'telescope'.extensions.dap.list_breakpoints{} end, desc = "List Breakpoints", ft = "python",},
+		{ "<leader>dlc", function() require'telescope'.extensions.dap.commands{} end, desc = "List Debugging Commands", ft = "python",},
+		{ "<leader>dlv", function() require'telescope'.extensions.dap.variables{} end, desc = "List Variables", ft = "python",},
 	},
 	config = function()
 		local path = require("mason-registry").get_package("debugpy"):get_install_path()
 		require("dap-python").setup(path .. "/venv/bin/python")
+        -- require('telescope').setup()
+        -- require('telescope').load_extension('dap')
 		-- require("dap-python").setup("~/Local/venvs/torch_venv/bin/python")
 		-- vim.keymap.set("n", "<Leader>db", function()
 		-- 	require("dap").toggle_breakpoint()

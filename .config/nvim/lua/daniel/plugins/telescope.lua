@@ -40,5 +40,6 @@ return {
     keymap.set("n", "<leader>fj", "<cmd>Telescope jumplist<cr>", { desc = "*Jump History*" })
     keymap.set("n", "<leader>fk", "<cmd>Telescope keymaps<cr>", { desc = "Keymaps" })
 
+    telescope.load_extension('dap')
   end,
 }

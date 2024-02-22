@@ -31,7 +31,7 @@ return {
 				-- Actions
 				map('n', '<leader>ghs', gs.stage_hunk, { desc = "Stage Hunk" })
 				map('n', '<leader>ghr', gs.reset_hunk, { desc = "Reset Hunk" })
-				map('v', '<leader>ghs', function() gs.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end, { desc = "Stage Hunk" })
+				map('v', '<leader>gha', function() gs.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end, { desc = "Stage Hunk" })
 				map('v', '<leader>ghr', function() gs.reset_hunk {vim.fn.line('.'), vim.fn.line('v')} end, { desc = "Reset Hunk" })
 				map('n', '<leader>ga', gs.stage_buffer, { desc = "Stage Buffer" })
 				map('n', '<leader>ghu', gs.undo_stage_hunk, {desc = "Undo Stage Hunk" })
@@ -45,8 +45,8 @@ return {
 
 				-- Telescope Functions 
 
-				map('n', '<leader>gc', "<cmd>Telescope git_bcommits<cr>", { desc = "Toggle Deleted" })
-				map('n', '<leader>gs', "<cmd>Telescope git_status<cr>", { desc = "Toggle Deleted" })
+				map('n', '<leader>gc', "<cmd>Telescope git_bcommits<cr>", { desc = "Git Commits" })
+				map('n', '<leader>gs', "<cmd>Telescope git_status<cr>", { desc = "Git Status" })
 
 
 				-- Add Lazygit keymapping 
