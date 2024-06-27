@@ -1,3 +1,6 @@
+sudo apt update
+sudo apt install --yes build-essential
+sudo apt install fd-find
 sudo apt-get --yes install ripgrep
 sudo apt --yes install fzf
 
