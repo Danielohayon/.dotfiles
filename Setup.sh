@@ -5,6 +5,7 @@ sudo apt-get --yes install ripgrep
 sudo apt --yes install fzf
 sudo apt install --yes zip
 sudo apt install --yes npm
+
 npm i -g pyright
 
 # Install nvim
