@@ -4,6 +4,9 @@ sudo apt install fd-find
 sudo apt-get --yes install ripgrep
 sudo apt --yes install fzf
 
+sudo apt install --yes npm
+npm i -g pyright
+
 # Install nvim
 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
 sudo rm -rf /opt/nvim
