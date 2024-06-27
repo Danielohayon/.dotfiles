@@ -1,5 +1,5 @@
-
-sudo apt install fzf
+sudo apt-get --yes install ripgrep
+sudo apt --yes install fzf
 
 # Install nvim
 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
