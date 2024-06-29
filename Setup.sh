@@ -9,7 +9,18 @@ sudo apt-get update -y
 sudo apt-get install -y xsel
 sudo npm i -g pyright
 
-sudo apt install python3.8-venv
+
+
+
+python_version=$(python3 -c "import sys; version = sys.version_info; print(f'{version.major}.{version.minor}')")
+
+# Install the corresponding venv package
+if [[ $python_version ]]; then
+    echo "Detected Python version: $python_version"
+    sudo apt install "python${python_version}-venv"
+
+
+
 
 # Install nvim
 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
