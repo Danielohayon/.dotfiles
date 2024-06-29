@@ -7,7 +7,9 @@ sudo apt install --yes zip
 sudo apt install --yes npm
 sudo apt-get update -y
 sudo apt-get install -y xsel
-npm i -g pyright
+sudo npm i -g pyright
+
+sudo apt install python3.8-venv
 
 # Install nvim
 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
