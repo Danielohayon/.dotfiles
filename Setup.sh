@@ -32,3 +32,4 @@ echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.bashrc
 # link nvim and tmux configurations
 rm -rf ~/.config/nvim
 ln -s ~/.dotfiles/.config/nvim ~/.config/nvim
+ln -sf ~/.dotfiles/.tmux.conf ~/.tmux.conf
