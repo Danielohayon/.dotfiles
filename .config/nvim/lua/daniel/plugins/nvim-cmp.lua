@@ -14,6 +14,11 @@ return {
 
     local luasnip = require("luasnip")
 
+
+    -- require("luasnip.loaders.from_snipmate").lazy_load({"~/.dotfiles/.config/nvim/lua/daniel/plugins/snippets"})
+    -- require("luasnip").add_snippets("python", "snippets")
+
+    require("luasnip.loaders.from_snipmate").lazy_load()
     local lspkind = require("lspkind")
 
     -- loads vscode style snippets from installed plugins (e.g. friendly-snippets)
