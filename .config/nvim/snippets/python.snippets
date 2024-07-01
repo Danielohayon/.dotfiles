@@ -1,0 +1,32 @@
+# Module Docstring
+snippet docs
+	"""
+	File: ${1:`vim_snippets#Filename('$1.py', 'foo.py')`}
+	Author: `g:snips_author`
+	Email: `g:snips_email`
+	Github: `g:snips_github`
+	Description: ${0}
+	"""
+
+
+snippet clai
+	class ${1:class_name}:
+		"""${2:description}"""
+		def __init__(self, ${3:args}):
+			${0}
+
+
+snippet sargparse 
+    parser = argparse.ArgumentParser(description="${0}")
+    parser.add_argument("--${1}", type=${2}, help="${3}",default=${4}, required=False)
+
+    parser.add_argument("--fp8", action="store_true", help="Enable Quantization to fp8")
+    args = parser.parse_args()
+
+snippet pp
+    print(f"${0}")
+
+
+snippet deff
+	def ${1:fname}(${2:`indent('.') ? 'self' : ''`}):
+		${0}
