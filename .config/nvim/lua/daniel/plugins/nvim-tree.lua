@@ -15,7 +15,7 @@ return {
 		-- configure nvim-tree
 		nvimtree.setup({
 			view = {
-				width = 30,
+				width = 35,
 				relativenumber = false,
 			},
 			update_focused_file = {
@@ -54,6 +54,7 @@ return {
 				},
 			},
 			filters = {
+                -- dotfiles = false,
 				custom = { ".DS_Store" },
 			},
 			git = {

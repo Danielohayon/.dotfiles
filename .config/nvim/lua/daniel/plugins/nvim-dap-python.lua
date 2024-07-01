@@ -70,7 +70,7 @@ return {
 		{
 			"<leader>dc",
 			function()
-				require("dap").continue()
+				require("dap").continue({ config = { justMyCode = false }})
 			end,
 			desc = "Continue",
 			ft = "python",
@@ -139,6 +139,27 @@ return {
 	config = function()
 		local path = require("mason-registry").get_package("debugpy"):get_install_path()
 		require("dap-python").setup(path .. "/venv/bin/python")
+        table.insert(require('dap').configurations.python,{
+                type = 'python';
+                justMyCode = false;
+                request = 'attach';
+                name = 'Attach remote not justMyCode';
+                connect = function()
+                    local host = vim.fn.input('Host [127.0.0.1]: ')
+                    host = host ~= '' and host or '127.0.0.1'
+                    local port = tonumber(vim.fn.input('Port [5678]: ')) or 5678
+                    return { host = host, port = port }
+                end;
+        })
+
+
+
+        -- table.insert(require('dap').configurations.python, {
+        --     justMyCode = false,
+        --     type = 'python',
+        -- })
+
+
         -- require('telescope').setup()
         -- require('telescope').load_extension('dap')
 		-- require("dap-python").setup("~/Local/venvs/torch_venv/bin/python")
