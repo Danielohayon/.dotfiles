@@ -1,3 +1,5 @@
+
+#Nvim setup
 sudo apt update
 sudo apt install --yes build-essential
 sudo apt install fd-find
@@ -12,9 +14,9 @@ sudo npm i -g pyright
 
 
 
+# Install the corresponding venv package
 python_version=$(python3 -c "import sys; version = sys.version_info; print(f'{version.major}.{version.minor}')")
 
-# Install the corresponding venv package
 if [[ $python_version ]]; then
     echo "Detected Python version: $python_version"
     sudo apt install "python${python_version}-venv"
@@ -33,3 +35,4 @@ echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.bashrc
 rm -rf ~/.config/nvim
 ln -s ~/.dotfiles/.config/nvim ~/.config/nvim
 ln -sf ~/.dotfiles/.tmux.conf ~/.tmux.conf
+ln -s ~/.dotfiles/.bash_aliases ~/.bash_aliases

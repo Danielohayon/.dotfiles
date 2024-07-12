@@ -9,6 +9,7 @@ shopt -s histappend
 export HISTTIMEFORMAT='%d/%m %H:%M '
 
 
+
 # -- Premade Init:
 
 # check the window size after each command and, if necessary,
@@ -67,11 +68,38 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
-# -- End of Premade Init
 
+# Add kubectl shortcuts
+alias k=kubectl
+complete -o default -F __start_kubectl k
+# kubectl auto completion
+source <(kubectl completion bash)
+if ! command -v hl-smi &> /dev/null
+then
+    source ~/.virtualenvs/vm/bin/activate
+fi
 
 # fzf initialization:
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+
+export OPENAI_API_KEY=""
+
+
+#Attempt to fix yanking problem in tmux 
+export DISPLAY=:0
+
+export HF_HOME=""
+# Mount Workdisk
+if [ ! $(ls -l /mnt/workdisk | wc -l) -gt 1 ]; then
+    echo "mounting workdisk"
+    # sudo mount <fill> /mnt/workdisk
+fi
+
+# Zoxide setup 
+eval "$(zoxide init bash)"
+alias cd='z'
+
 
 # Add tree view when itterating over directories
 _fzf_comprun() {
@@ -84,11 +112,3 @@ _fzf_comprun() {
   esac
 }
 
-# Lazygit alias 
-alias lz='lazygit'
-
-# exa init
-alias ll='exa -lhF --icons --group-directories-first'
-alias la='exa -lhaF --icons --group-directories-first'
-alias l='exa -F --icons --group-directories-first'
-alias tree='exa -T --icons --group-directories-first'
