@@ -1,4 +1,7 @@
 {
     "useLibraryCodeForTypes": true
+    "pythonPlatform": "Linux",
+    "pythonVersion": "3.8",
+    "venvPath": "/home/dohayon/.virtualenvs/",
+    "venv": "venv_name"
 }
-
