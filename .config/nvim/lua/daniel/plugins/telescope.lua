@@ -24,6 +24,7 @@ return {
     })
 
     telescope.load_extension("fzf")
+    telescope.load_extension("dir")
 
     -- set keymaps
     local keymap = vim.keymap -- for conciseness
@@ -37,6 +38,7 @@ return {
     keymap.set("n", "<leader>fp", "<cmd>Telescope pickers<cr>", { desc = "Previous Searches" })
     keymap.set("n", "<leader>fy", "<cmd>Telescope neoclip<cr>", { desc = "Previous Searches" })
 
+    keymap.set("n", "<leader>fd", "<cmd>Telescope dir live_grep<CR>", { noremap = true, silent = true })
     keymap.set("n", "<leader>fv", "<cmd>Telescope command_history<cr>", { desc = "Command History" })
     keymap.set("n", "<leader>fj", "<cmd>Telescope jumplist<cr>", { desc = "*Jump History*" })
     keymap.set("n", "<leader>fk", "<cmd>Telescope keymaps<cr>", { desc = "Keymaps" })
