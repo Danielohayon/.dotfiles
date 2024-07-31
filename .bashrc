@@ -112,3 +112,6 @@ _fzf_comprun() {
   esac
 }
 
+# A better watch that By aliasing watch itself, as alias watchh='watch ' (with a trailing space) and then using watchh gpu, you force the current interactive shell to expand gpu before it's passed to watch.
+alias watchh='watch '
+
