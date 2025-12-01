@@ -7,8 +7,17 @@ return {
 		"nvim-lua/plenary.nvim"
   },
   config = function()
-    -- import lspconfig plugin
+    -- Suppress lspconfig deprecation warning (still works fine, migration can be done later)
+    local orig_notify = vim.notify
+    vim.notify = function(msg, ...)
+      if msg and msg:match("lspconfig.*deprecated") then return end
+      return orig_notify(msg, ...)
+    end
+
     local lspconfig = require("lspconfig")
+
+    -- Restore original notify
+    vim.notify = orig_notify
 
     -- import cmp-nvim-lsp plugin
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
