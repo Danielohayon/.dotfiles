@@ -52,6 +52,10 @@ alias c='clear'
 
 alias v=nvim
 
+# Claude Code
+alias cc='claude'
+alias cr='claude --resume'
+
 # Assistant init
 alias chat='gpt --model claude-3-opus-20240229 --no_price'
 alias gcbc='gpt --model claude-3-opus-20240229 bash --prompt'
