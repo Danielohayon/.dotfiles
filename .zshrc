@@ -48,12 +48,11 @@ alias ls='eza -lhF --icons --group-directories-first'
 alias la='eza -lhaF --icons --group-directories-first'
 alias l='eza -F --icons --group-directories-first'
 alias tree='eza -T --icons --group-directories-first'
-alias c='clear'
 
 alias v=nvim
 
 # Claude Code
-alias cc='claude'
+alias c='claude'
 alias cr='claude --resume'
 
 # Assistant init
