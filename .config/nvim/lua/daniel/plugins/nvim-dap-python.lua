@@ -137,8 +137,10 @@ return {
 		{ "<leader>dlv", function() require'telescope'.extensions.dap.variables{} end, desc = "List Variables", ft = "python",},
 	},
 	config = function()
-		local path = require("mason-registry").get_package("debugpy"):get_install_path()
-		require("dap-python").setup(path .. "/venv/bin/python")
+		-- Use Mason's debugpy path if it exists, otherwise fall back to system python
+		local debugpy_path = vim.fn.stdpath("data") .. "/mason/packages/debugpy/venv/bin/python"
+		local path = vim.fn.filereadable(debugpy_path) == 1 and debugpy_path or "python3"
+		require("dap-python").setup(path)
         table.insert(require('dap').configurations.python,{
                 type = 'python';
                 justMyCode = false;

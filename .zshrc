@@ -1,4 +1,7 @@
 
+# Homebrew setup (Apple Silicon)
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
 # History settings
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
