@@ -27,12 +27,16 @@ keymap.set("n", "<leader>li2", "<cmd>set autoindent expandtab tabstop=2 shiftwid
 -- keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 
 
-vim.api.nvim_set_keymap('n', 'L', '6j', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('n', 'H', '6k', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('v', 'L', '6j', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('v', 'H', '6k', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', 'L', '6gj', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', 'H', '6gk', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('v', 'L', '6gj', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('v', 'H', '6gk', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('v', '<', '<gv', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('v', '>', '>gv', {noremap = true, silent = true})
+
+-- Move by visual lines when wrapped (but still allow 5j to jump 5 actual lines)
+vim.keymap.set({'n', 'v'}, 'j', "v:count == 0 ? 'gj' : 'j'", {expr = true, silent = true})
+vim.keymap.set({'n', 'v'}, 'k', "v:count == 0 ? 'gk' : 'k'", {expr = true, silent = true})
 
 
 
