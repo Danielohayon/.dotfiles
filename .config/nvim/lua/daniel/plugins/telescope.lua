@@ -6,10 +6,12 @@ return {
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
     "nvim-tree/nvim-web-devicons",
     "princejoogie/dir-telescope.nvim",
+    "nvim-telescope/telescope-live-grep-args.nvim",
   },
   config = function()
     local telescope = require("telescope")
     local actions = require("telescope.actions")
+    local lga_actions = require("telescope-live-grep-args.actions")
 
     telescope.setup({
       defaults = {
@@ -22,17 +24,30 @@ return {
           },
         },
       },
+      extensions = {
+        live_grep_args = {
+          auto_quoting = true,
+          mappings = {
+            i = {
+              ["<C-g>"] = lga_actions.quote_prompt({ postfix = " -g " }),  -- add glob filter
+              ["<C-t>"] = lga_actions.quote_prompt({ postfix = " -t " }),  -- add type filter
+              ["<C-space>"] = lga_actions.to_fuzzy_refine,  -- fuzzy filter results
+            },
+          },
+        },
+      },
     })
 
     telescope.load_extension("fzf")
     telescope.load_extension("dir")
+    telescope.load_extension("live_grep_args")
 
     -- set keymaps
     local keymap = vim.keymap -- for conciseness
 
     keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
     keymap.set("n", "<leader>fo", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
-    keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
+    keymap.set("n", "<leader>fs", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>", { desc = "Find string in cwd (with args)" })
     keymap.set("n", "<leader>fu", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
     keymap.set("n", "<leader>fh", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Search In Current Buffer" })
     keymap.set("n", "<leader>fr", "<cmd>Telescope resume<cr>", { desc = "Continue Previous Search" })
