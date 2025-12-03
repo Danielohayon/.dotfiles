@@ -1,4 +1,3 @@
-danielohayon@rl-env-tests:/mnt/data/token_bridge$ cat ~/.bashrc
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -9,16 +8,12 @@ case $- in
       *) return;;
 esac
 
-# don't put duplicate lines in the history.
-# See bash(1) for more options
+# History settings
 HISTCONTROL=ignoredups
-
-# append to the history file, don't overwrite it
 shopt -s histappend
-
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+export HISTTIMEFORMAT='%d/%m %H:%M '
+HISTSIZE=10000
+HISTFILESIZE=20000
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
