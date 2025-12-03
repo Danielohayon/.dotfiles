@@ -29,7 +29,7 @@ return {
           auto_quoting = true,
           mappings = {
             i = {
-              ["<C-g>"] = lga_actions.quote_prompt({ postfix = " -g " }),  -- add glob filter
+              ["<C-r>"] = lga_actions.quote_prompt({ postfix = " -g " }),  -- add glob filter
               ["<C-t>"] = lga_actions.quote_prompt({ postfix = " -t " }),  -- add type filter
               ["<C-space>"] = lga_actions.to_fuzzy_refine,  -- fuzzy filter results
             },
