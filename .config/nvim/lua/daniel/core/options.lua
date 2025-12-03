@@ -45,3 +45,6 @@ vim.opt.signcolumn = "yes:2"
 -- Folding with indent
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99  -- start with all folds open
+
+-- Smooth scrolling through wrapped lines
+vim.opt.smoothscroll = true

@@ -38,6 +38,10 @@ vim.api.nvim_set_keymap('v', '>', '>gv', {noremap = true, silent = true})
 vim.keymap.set({'n', 'v'}, 'j', "v:count == 0 ? 'gj' : 'j'", {expr = true, silent = true})
 vim.keymap.set({'n', 'v'}, 'k', "v:count == 0 ? 'gk' : 'k'", {expr = true, silent = true})
 
+-- Mouse scroll by visual lines (for word wrap) - uses viewport scroll with smoothscroll
+vim.keymap.set({'n', 'v', 'i'}, '<ScrollWheelUp>', '3<C-y>', {noremap = true, silent = true})
+vim.keymap.set({'n', 'v', 'i'}, '<ScrollWheelDown>', '3<C-e>', {noremap = true, silent = true})
+
 
 
 
