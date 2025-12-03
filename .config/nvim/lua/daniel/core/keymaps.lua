@@ -29,6 +29,8 @@ keymap.set("n", "<leader>li2", "<cmd>set autoindent expandtab tabstop=2 shiftwid
 
 vim.api.nvim_set_keymap('n', 'L', '6j', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('n', 'H', '6k', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('v', 'L', '6j', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('v', 'H', '6k', {noremap = true, silent = true})
 
 
 
