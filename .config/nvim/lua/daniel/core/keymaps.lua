@@ -31,6 +31,8 @@ vim.api.nvim_set_keymap('n', 'L', '6j', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('n', 'H', '6k', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('v', 'L', '6j', {noremap = true, silent = true})
 vim.api.nvim_set_keymap('v', 'H', '6k', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('v', '<', '<gv', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('v', '>', '>gv', {noremap = true, silent = true})
 
 
 
