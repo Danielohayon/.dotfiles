@@ -3,12 +3,19 @@ return {
   dir = vim.fn.stdpath("config"),  -- dummy dir, this is just config
   name = "pdbrc-breakpoints",
   config = function()
-    local ns = vim.api.nvim_create_namespace("pdbrc_breakpoints")
     local sign_name = "PdbrcBreakpoint"
     local pdbrc_path = vim.fn.getcwd() .. "/.pdbrc"
 
-    -- Define the sign
-    vim.fn.sign_define(sign_name, { text = "", texthl = "DiagnosticError" })
+    -- Ensure signcolumn is visible
+    vim.opt.signcolumn = "yes"
+
+    -- Define the sign with high priority
+    vim.fn.sign_define(sign_name, {
+      text = "",
+      texthl = "DiagnosticError",
+      linehl = "",
+      numhl = "DiagnosticError",
+    })
 
     -- Parse .pdbrc and return table of {file = {line1, line2, ...}}
     local function parse_pdbrc()
@@ -56,7 +63,7 @@ return {
       local breakpoints = parse_pdbrc()
       local file_bps = breakpoints[filepath] or {}
       for _, lnum in ipairs(file_bps) do
-        vim.fn.sign_place(0, "pdbrc_breakpoints", sign_name, bufnr, { lnum = lnum, priority = 20 })
+        vim.fn.sign_place(0, "pdbrc_breakpoints", sign_name, bufnr, { lnum = lnum, priority = 100 })
       end
     end
 
@@ -78,18 +85,21 @@ return {
       end
 
       if idx then
+        -- Remove breakpoint
         table.remove(breakpoints[filepath], idx)
         if #breakpoints[filepath] == 0 then
           breakpoints[filepath] = nil
         end
+        vim.fn.sign_unplace("pdbrc_breakpoints", { buffer = bufnr, id = lnum })
         vim.notify("Breakpoint removed: " .. lnum, vim.log.levels.INFO)
       else
+        -- Add breakpoint
         table.insert(breakpoints[filepath], lnum)
+        vim.fn.sign_place(lnum, "pdbrc_breakpoints", sign_name, bufnr, { lnum = lnum, priority = 100 })
         vim.notify("Breakpoint added: " .. lnum, vim.log.levels.INFO)
       end
 
       write_pdbrc(breakpoints)
-      refresh_signs(bufnr)
     end
 
     -- Clear all breakpoints in current file
