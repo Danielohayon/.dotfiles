@@ -136,3 +136,9 @@ setopt AUTO_CD
 autoload -Uz compinit && compinit
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive completion
+
+alias mutsync='mutagen sync create --ignore=".venv" --ignore="venv" --ignore="node_modules" --ignore="__pycache__" --ignore=".pytest_cache"
+  --ignore=".mypy_cache" --ignore=".ruff_cache" --ignore="*.pyc" --ignore="*.pyo" --ignore="*.egg-info" --ignore=".eggs" --ignore="*.db-shm"
+  --ignore="*.db-wal" --ignore="*.db-journal" --ignore=".git" --ignore=".DS_Store" --ignore="Thumbs.db" --ignore="*.swp" --ignore="*.swo"
+  --ignore="*~" --ignore=".idea" --ignore="*.log" --ignore="dist" --ignore="build" --ignore="target" --ignore=".tox" --ignore=".nox"
+  --ignore=".coverage" --ignore="htmlcov" --ignore=".cache" --ignore="*.so" --ignore="*.dylib"'
