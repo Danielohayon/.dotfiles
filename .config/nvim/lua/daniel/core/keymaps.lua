@@ -104,3 +104,37 @@ end
 
 vim.api.nvim_set_keymap('n', '<leader>lt', ':lua ToggleVirtualText()<CR>', { noremap = true, silent = true })
 
+-- Copy file path and line range to clipboard (for code references)
+vim.keymap.set('v', 'mc', function()
+    local start_line = vim.fn.line("'<")
+    local end_line = vim.fn.line("'>")
+    local filepath = vim.fn.expand('%:.')  -- relative path from cwd
+    local ref
+    if start_line == end_line then
+        ref = filepath .. ':' .. start_line
+    else
+        ref = filepath .. ':' .. start_line .. '-' .. end_line
+    end
+    vim.fn.setreg('+', ref)
+    vim.fn.system('tmux load-buffer -', ref)  -- also copy to tmux buffer
+    vim.notify('Copied: ' .. ref, vim.log.levels.INFO)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'x', false)
+end, { noremap = true, silent = true, desc = "Copy file:lines reference to clipboard" })
+
+-- Copy absolute file path and line range to clipboard
+vim.keymap.set('v', 'mC', function()
+    local start_line = vim.fn.line("'<")
+    local end_line = vim.fn.line("'>")
+    local filepath = vim.fn.expand('%:p')  -- absolute path
+    local ref
+    if start_line == end_line then
+        ref = filepath .. ':' .. start_line
+    else
+        ref = filepath .. ':' .. start_line .. '-' .. end_line
+    end
+    vim.fn.setreg('+', ref)
+    vim.fn.system('tmux load-buffer -', ref)
+    vim.notify('Copied: ' .. ref, vim.log.levels.INFO)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'x', false)
+end, { noremap = true, silent = true, desc = "Copy absolute file:lines reference to clipboard" })
+
