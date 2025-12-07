@@ -4,7 +4,7 @@ return {
     "nvim-treesitter/nvim-treesitter",
     "nvim-tree/nvim-web-devicons",
   },
-  cmd = { "AerialToggle", "AerialOpen" },
+  event = "BufReadPost",
   keys = {
     { "<leader>co", "<cmd>AerialToggle<cr>", desc = "Code outline" },
     { "<leader>cn", "<cmd>AerialNext<cr>", desc = "Next symbol" },
@@ -18,5 +18,6 @@ return {
     },
     show_guides = true,
     filter_kind = false,  -- show all symbols
+    open_automatic = true,  -- auto-open when entering a buffer
   },
 }
