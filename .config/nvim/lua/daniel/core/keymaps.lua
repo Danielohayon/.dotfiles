@@ -106,8 +106,11 @@ vim.api.nvim_set_keymap('n', '<leader>lt', ':lua ToggleVirtualText()<CR>', { nor
 
 -- Copy file path and line range to clipboard (for code references)
 vim.keymap.set('v', 'mc', function()
-    local start_line = vim.fn.line("'<")
-    local end_line = vim.fn.line("'>")
+    -- Use "v" mark (start of visual) and "." (cursor) to get current selection
+    local line1 = vim.fn.line("v")
+    local line2 = vim.fn.line(".")
+    local start_line = math.min(line1, line2)
+    local end_line = math.max(line1, line2)
     local filepath = vim.fn.expand('%:.')  -- relative path from cwd
     local ref
     if start_line == end_line then
@@ -123,8 +126,10 @@ end, { noremap = true, silent = true, desc = "Copy file:lines reference to clipb
 
 -- Copy absolute file path and line range to clipboard
 vim.keymap.set('v', 'mC', function()
-    local start_line = vim.fn.line("'<")
-    local end_line = vim.fn.line("'>")
+    local line1 = vim.fn.line("v")
+    local line2 = vim.fn.line(".")
+    local start_line = math.min(line1, line2)
+    local end_line = math.max(line1, line2)
     local filepath = vim.fn.expand('%:p')  -- absolute path
     local ref
     if start_line == end_line then
