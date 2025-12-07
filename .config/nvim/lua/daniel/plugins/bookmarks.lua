@@ -42,44 +42,132 @@ return {
 
       local allmarks = bm_config.cache.data
       local marklist = {}
+      local cwd = vim.fn.getcwd()
       for k, ma in pairs(allmarks) do
-        for l, v in pairs(ma) do
-          table.insert(marklist, {
-            filename = k,
-            lnum = tonumber(l),
-            text = v.a and get_text(v.a) or v.m,
-            annotation = v.a or "",
-          })
+        -- Only include bookmarks from current project
+        if k:sub(1, #cwd) == cwd then
+          for l, v in pairs(ma) do
+            table.insert(marklist, {
+              filename = k,
+              lnum = tonumber(l),
+              text = v.a and get_text(v.a) or v.m,
+              annotation = v.a or "",
+            })
+          end
         end
       end
 
-      -- Simple previewer that shows the full note
+      -- Custom previewer: note on top, then code below (single buffer)
       local note_previewer = previewers.new_buffer_previewer({
-        title = "Note",
+        title = "Note & Code",
         define_preview = function(self, entry)
-          -- Enable word wrap in preview window
+          -- Enable word wrap
           vim.api.nvim_win_set_option(self.state.winid, "wrap", true)
           vim.api.nvim_win_set_option(self.state.winid, "linebreak", true)
 
           local lines = {}
-          table.insert(lines, "File: " .. entry.filename)
-          table.insert(lines, "Line: " .. entry.lnum)
+          local code_start_line = 0
+          local code_prefix_len = 9  -- "  1234 | " = 9 chars (ASCII only)
+
+          -- Add note section
+          table.insert(lines, "-- Note " .. string.rep("-", 40))
           table.insert(lines, "")
-          table.insert(lines, "--- Note ---")
-          table.insert(lines, "")
-          -- Add annotation text
           if entry.annotation == "" then
-            table.insert(lines, "(no annotation)")
+            table.insert(lines, "  (no annotation)")
           else
-            table.insert(lines, entry.annotation)
+            for line in entry.annotation:gmatch("[^\n]+") do
+              table.insert(lines, "  " .. line)
+            end
           end
+          table.insert(lines, "")
+          table.insert(lines, string.rep("-", 48))
+          table.insert(lines, "")
+
+          -- Add file info
+          table.insert(lines, "-- Code: " .. vim.fn.fnamemodify(entry.filename, ":t") .. ":" .. entry.lnum)
+          code_start_line = #lines  -- 0-indexed line where code starts
+
+          -- Read file content and add code context
+          local ok, file_lines = pcall(vim.fn.readfile, entry.filename)
+          local code_lines_raw = {}
+          if ok then
+            local start_line = math.max(1, entry.lnum - 5)
+            local end_line = math.min(#file_lines, entry.lnum + 10)
+            for i = start_line, end_line do
+              local prefix = i == entry.lnum and "> " or "  "
+              local line_num = string.format("%4d", i)
+              table.insert(lines, prefix .. line_num .. " | " .. (file_lines[i] or ""))
+              table.insert(code_lines_raw, file_lines[i] or "")
+            end
+          end
+
           vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+
+          -- Apply syntax highlighting to code section using treesitter
+          -- Parse the FULL file for correct context, but only highlight displayed lines
+          local ft = vim.filetype.match({ filename = entry.filename })
+          if ft and ok and #file_lines > 0 then
+            local full_text = table.concat(file_lines, "\n")
+            local ts_ok, parser = pcall(vim.treesitter.get_string_parser, full_text, ft)
+            if ts_ok and parser then
+              local tree = parser:parse()[1]
+              if tree then
+                local query_ok, query = pcall(vim.treesitter.query.get, ft, "highlights")
+                if query_ok and query then
+                  local ns = vim.api.nvim_create_namespace("bookmark_preview_hl")
+                  local display_start = math.max(1, entry.lnum - 5)
+                  local display_end = math.min(#file_lines, entry.lnum + 10)
+
+                  for id, node in query:iter_captures(tree:root(), full_text, display_start - 1, display_end) do
+                    local name = query.captures[id]
+                    local hl = "@" .. name .. "." .. ft
+                    if vim.fn.hlexists(hl) == 0 then
+                      hl = "@" .. name
+                    end
+                    local start_row, start_col, end_row, end_col = node:range()
+
+                    -- Only highlight if within our displayed range
+                    if start_row >= display_start - 1 and start_row < display_end then
+                      -- Convert file line to buffer line
+                      local buf_start_row = code_start_line + (start_row - (display_start - 1))
+                      local buf_end_row = code_start_line + (end_row - (display_start - 1))
+                      local buf_start_col = code_prefix_len + start_col
+                      local buf_end_col = code_prefix_len + end_col
+
+                      -- Clamp end row to displayed range
+                      if buf_end_row > code_start_line + (display_end - display_start) then
+                        buf_end_row = code_start_line + (display_end - display_start)
+                        buf_end_col = #lines[buf_end_row + 1] or 0
+                      end
+
+                      pcall(vim.api.nvim_buf_set_extmark, self.state.bufnr, ns, buf_start_row, buf_start_col, {
+                        end_row = buf_end_row,
+                        end_col = buf_end_col,
+                        hl_group = hl,
+                      })
+                    end
+                  end
+                end
+              end
+            end
+          end
+
+          -- Highlight the bookmark line marker
+          local ns = vim.api.nvim_create_namespace("bookmark_preview_marker")
+          for i, line in ipairs(lines) do
+            if line:sub(1, 1) == ">" then
+              pcall(vim.api.nvim_buf_set_extmark, self.state.bufnr, ns, i - 1, 0, {
+                end_col = 1,
+                hl_group = "WarningMsg",
+              })
+            end
+          end
         end,
       })
 
       pickers.new({
         layout_strategy = "horizontal",
-        layout_config = { width = 0.7, height = 0.5, preview_width = 0.4 },
+        layout_config = { width = 0.8, height = 0.7, preview_width = 0.5 },
       }, {
         prompt_title = "bookmarks",
         finder = finders.new_table({
