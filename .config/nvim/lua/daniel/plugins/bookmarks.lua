@@ -14,10 +14,91 @@ return {
       },
     })
 
+    -- Custom annotation editor with larger floating window
+    local function edit_annotation()
+      local api = vim.api
+      local lnum = api.nvim_win_get_cursor(0)[1]
+      local bufnr = api.nvim_get_current_buf()
+      local actions = require("bookmarks.actions")
+      local bm_config = require("bookmarks.config").config
+
+      -- Get existing annotation
+      local mark = actions.bookmark_line(lnum, bufnr) or {}
+      local existing = mark.a or ""
+
+      -- Create floating window
+      local width = math.floor(vim.o.columns * 0.6)
+      local height = 6
+      local row = math.floor((vim.o.lines - height) / 2)
+      local col = math.floor((vim.o.columns - width) / 2)
+
+      local edit_buf = api.nvim_create_buf(false, true)
+      api.nvim_buf_set_option(edit_buf, "buftype", "nofile")
+      api.nvim_buf_set_option(edit_buf, "bufhidden", "wipe")
+
+      local win = api.nvim_open_win(edit_buf, true, {
+        relative = "editor",
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = "minimal",
+        border = "rounded",
+        title = " Edit Bookmark Note (Enter to save, Esc to cancel) ",
+        title_pos = "center",
+      })
+
+      -- Set the existing text (split by newlines)
+      local existing_lines = {}
+      for line in (existing .. "\n"):gmatch("([^\n]*)\n") do
+        table.insert(existing_lines, line)
+      end
+      if #existing_lines == 0 then existing_lines = { "" } end
+      api.nvim_buf_set_lines(edit_buf, 0, -1, false, existing_lines)
+      api.nvim_win_set_option(win, "wrap", true)
+      api.nvim_win_set_option(win, "linebreak", true)
+
+      -- Start in insert mode at end of text
+      vim.cmd("startinsert!")
+
+      -- Save function
+      local function save_and_close()
+        local lines = api.nvim_buf_get_lines(edit_buf, 0, -1, false)
+        local answer = table.concat(lines, "\n")  -- Preserve line breaks
+        api.nvim_win_close(win, true)
+        vim.cmd("stopinsert")
+
+        if answer ~= "" then
+          -- Add/update the bookmark with annotation
+          local signs = require("bookmarks.signs").new(bm_config.signs)
+          local line = api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, false)[1]
+          local filepath = vim.loop.fs_realpath(api.nvim_buf_get_name(bufnr))
+          if filepath then
+            local data = bm_config.cache["data"]
+            data[filepath] = data[filepath] or {}
+            data[filepath][tostring(lnum)] = { m = line, a = answer }
+            actions.refresh(bufnr)
+            actions.saveBookmarks()
+          end
+        end
+      end
+
+      -- Keymaps for the edit buffer
+      local function cancel()
+        api.nvim_win_close(win, true)
+        vim.cmd("stopinsert")
+      end
+      vim.keymap.set("i", "<CR>", save_and_close, { buffer = edit_buf })
+      vim.keymap.set("n", "<CR>", save_and_close, { buffer = edit_buf })
+      vim.keymap.set("i", "<Esc>", cancel, { buffer = edit_buf })
+      vim.keymap.set("n", "<Esc>", cancel, { buffer = edit_buf })
+      vim.keymap.set("n", "q", cancel, { buffer = edit_buf })
+    end
+
     -- Global keymaps (fast access without leader)
     local opts = { silent = true }
     vim.keymap.set("n", "mm", bm.bookmark_toggle, vim.tbl_extend("force", opts, { desc = "Toggle bookmark" }))
-    vim.keymap.set("n", "ma", bm.bookmark_ann, vim.tbl_extend("force", opts, { desc = "Add/edit bookmark annotation" }))
+    vim.keymap.set("n", "ma", edit_annotation, vim.tbl_extend("force", opts, { desc = "Add/edit bookmark annotation" }))
     vim.keymap.set("n", "md", bm.bookmark_toggle, vim.tbl_extend("force", opts, { desc = "Delete bookmark at cursor" }))
     vim.keymap.set("n", "mB", bm.bookmark_clean, vim.tbl_extend("force", opts, { desc = "Clean bookmarks in buffer" }))
     vim.keymap.set("n", "mD", bm.bookmark_clear_all, vim.tbl_extend("force", opts, { desc = "Clear all bookmarks" }))
@@ -37,7 +118,8 @@ return {
         if ret == nil then
           ret = bm_config.signs.ann.text .. " "
         end
-        return ret .. annotation
+        -- Replace newlines for display purposes
+        return ret .. annotation:gsub("\n", " ")
       end
 
       local allmarks = bm_config.cache.data
@@ -173,14 +255,16 @@ return {
         finder = finders.new_table({
           results = marklist,
           entry_maker = function(entry)
-            -- Show: short path + annotation preview
+            -- Show: short path + annotation preview (replace newlines for display)
             local short_path = vim.fn.fnamemodify(entry.filename, ":t")
-            local display_text = short_path .. ":" .. entry.lnum .. " │ " .. entry.text
+            local display_annotation = entry.text:gsub("\n", " ")
+            local display_text = short_path .. ":" .. entry.lnum .. " | " .. display_annotation
+            local ordinal_text = entry.filename .. display_annotation
             return {
               valid = true,
               value = entry,
               display = display_text,
-              ordinal = entry.filename .. entry.text,
+              ordinal = ordinal_text,
               filename = entry.filename,
               lnum = entry.lnum,
               col = 1,
