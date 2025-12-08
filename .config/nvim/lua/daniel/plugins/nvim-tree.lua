@@ -3,6 +3,21 @@ return {
 	dependencies = { "nvim-tree/nvim-web-devicons" },
 	config = function()
 		local nvimtree = require("nvim-tree")
+		local api = require("nvim-tree.api")
+
+		local function on_attach(bufnr)
+			local function opts(desc)
+				return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+			end
+
+			-- default mappings
+			api.config.mappings.default_on_attach(bufnr)
+
+			-- custom mappings: gy for relative, gY for absolute
+			vim.keymap.del("n", "gy", { buffer = bufnr })
+			vim.keymap.set("n", "gy", api.fs.copy.relative_path, opts("Copy Relative Path"))
+			vim.keymap.set("n", "gY", api.fs.copy.absolute_path, opts("Copy Absolute Path"))
+		end
 
 		-- recommended settings from nvim-tree documentation
 		vim.g.loaded_netrw = 1
@@ -14,6 +29,7 @@ return {
 
 		-- configure nvim-tree
 		nvimtree.setup({
+			on_attach = on_attach,
 			view = {
 				width = 35,
 				relativenumber = false,
@@ -64,8 +80,6 @@ return {
 
 		-- set keymaps
 		local keymap = vim.keymap -- for conciseness
-
-		local api = require("nvim-tree.api")
 		keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" }) -- toggle file explorer
 		keymap.set("n", "<leader>p", "<cmd>NvimTreeFocus<CR>", { desc = "Toggle file explorer" }) -- toggle file explorer
 		-- keymap.set("n", "<leader>ef", "<cmd>NvimTreeFindFileToggle<CR>", { desc = "Toggle file explorer on current file" }) -- toggle file explorer on current file
