@@ -39,7 +39,50 @@ return {
 				map('n', '<leader>ghp', gs.preview_hunk, {desc = "Preview Hunk" })
 				map('n', '<leader>gb', function() gs.blame_line{full=true} end, { desc = "Blame Line" })
 				map('n', '<leader>gtb', gs.toggle_current_line_blame, {desc = "Toggle Current Line Blame" })
-				map('n', '<leader>gd', gs.diffthis, {desc = "Diff File" })
+				-- Diff with easy close - q returns to original buffer
+				map('n', '<leader>gd', function()
+					local original_win = vim.api.nvim_get_current_win()
+					local original_buf = vim.api.nvim_get_current_buf()
+					local wins_before = vim.api.nvim_list_wins()
+					gs.diffthis()
+
+					vim.schedule(function()
+						-- Find the new window (diff window)
+						local diff_win = nil
+						local diff_buf = nil
+						for _, win in ipairs(vim.api.nvim_list_wins()) do
+							if not vim.tbl_contains(wins_before, win) then
+								diff_win = win
+								diff_buf = vim.api.nvim_win_get_buf(win)
+								break
+							end
+						end
+
+						-- Function to close diff and return to original
+						local function close_diff()
+							vim.cmd("diffoff!")
+							-- Close the diff window
+							if diff_win and vim.api.nvim_win_is_valid(diff_win) then
+								vim.api.nvim_win_close(diff_win, true)
+							end
+							vim.cmd("diffoff!")
+							-- Return to original
+							if vim.api.nvim_win_is_valid(original_win) then
+								vim.api.nvim_set_current_win(original_win)
+							end
+							-- Remove q mapping from original buffer
+							pcall(vim.keymap.del, 'n', 'q', { buffer = original_buf })
+						end
+
+						-- Add q mapping to original buffer
+						vim.keymap.set('n', 'q', close_diff, { buffer = original_buf, desc = "Close diff" })
+
+						-- Add q mapping to diff buffer if found
+						if diff_buf then
+							vim.keymap.set('n', 'q', close_diff, { buffer = diff_buf, desc = "Close diff" })
+						end
+					end)
+				end, {desc = "Diff File" })
 				map('n', '<leader>gD', function() gs.diffthis('~') end, {desc = "Diff File ~" })
 				map('n', '<leader>gtd', gs.toggle_deleted, { desc = "Toggle Deleted" })
 
