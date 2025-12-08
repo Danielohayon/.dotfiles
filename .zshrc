@@ -91,9 +91,9 @@ export HF_HOME="/Users/danielohayon/.cache/huggingface"
 export DISPLAY=:0
 
 # ============================================
-# Zoxide setup
+# Zoxide setup (only in interactive shells)
 # ============================================
-if command -v zoxide &> /dev/null; then
+if [[ -o interactive ]] && command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
     alias cd='z'
 fi
