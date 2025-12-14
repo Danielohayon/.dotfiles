@@ -114,9 +114,9 @@ vim.keymap.set('v', 'mc', function()
     local filepath = vim.fn.expand('%:.')  -- relative path from cwd
     local ref
     if start_line == end_line then
-        ref = filepath .. ':' .. start_line
+        ref = '@' .. filepath .. ':' .. start_line
     else
-        ref = filepath .. ':' .. start_line .. '-' .. end_line
+        ref = '@' .. filepath .. ':' .. start_line .. '-' .. end_line
     end
     vim.fn.setreg('+', ref)
     vim.fn.system('tmux load-buffer -', ref)  -- also copy to tmux buffer
@@ -133,9 +133,9 @@ vim.keymap.set('v', 'mC', function()
     local filepath = vim.fn.expand('%:p')  -- absolute path
     local ref
     if start_line == end_line then
-        ref = filepath .. ':' .. start_line
+        ref = '@' .. filepath .. ':' .. start_line
     else
-        ref = filepath .. ':' .. start_line .. '-' .. end_line
+        ref = '@' .. filepath .. ':' .. start_line .. '-' .. end_line
     end
     vim.fn.setreg('+', ref)
     vim.fn.system('tmux load-buffer -', ref)
