@@ -1,0 +1,17 @@
+# Ghostty Configuration
+# Run `ghostty +show-config --default --docs` for all options
+# Docs: https://ghostty.org/docs/config
+
+# Font
+font-family = Hack Nerd Font
+# font-size = 14
+
+# Window
+# window-padding-x = 4
+# window-padding-y = 4
+
+# Theme (ghostty has built-in themes, or use custom colors)
+# theme = catppuccin-mocha
+
+# Keybindings
+# keybind = cmd+shift+enter=new_window
