@@ -19,5 +19,9 @@ return {
     show_guides = true,
     filter_kind = false,  -- show all symbols
     open_automatic = true,  -- auto-open when entering a buffer
+    keymaps = {
+      ["<C-j>"] = false,  -- disable, conflicts with tmux/pane navigation
+      ["<C-k>"] = false,  -- disable, conflicts with tmux/pane navigation
+    },
   },
 }
