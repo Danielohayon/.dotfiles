@@ -142,3 +142,28 @@ alias mutsync='mutagen sync create --ignore=".venv" --ignore="venv" --ignore="no
   --ignore="*.db-wal" --ignore="*.db-journal" --ignore=".git" --ignore=".DS_Store" --ignore="Thumbs.db" --ignore="*.swp" --ignore="*.swo"
   --ignore="*~" --ignore=".idea" --ignore="*.log" --ignore="dist" --ignore="build" --ignore="target" --ignore=".tox" --ignore=".nox"
   --ignore=".coverage" --ignore="htmlcov" --ignore=".cache" --ignore="*.so" --ignore="*.dylib"'
+
+
+
+## Set vim keybindings in terminal
+bindkey -v
+# Change cursor shape for different vi modes
+zle-keymap-select() {
+  if [[ $KEYMAP == vicmd ]]; then
+    echo -ne '\e[2 q'  # Block cursor
+  else
+    echo -ne '\e[6 q'  # Beam cursor
+  fi
+}
+zle -N zle-keymap-select
+
+# Start with beam cursor
+zle-line-init() {
+  echo -ne '\e[6 q'
+}
+zle -N zle-line-init
+
+bindkey '^H' backward-delete-char   # Ctrl+H (alternate backspace)
+bindkey '^W' backward-kill-word     # Ctrl+W to delete word
+bindkey '^U' backward-kill-line     # Ctrl+U to delete to start of line
+bindkey '^?' backward-delete-char
