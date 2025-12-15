@@ -15,6 +15,9 @@ return {
 
     telescope.setup({
       defaults = {
+        cache_picker = {
+          num_pickers = 30, -- keep last 30 searches in history
+        },
         path_display = { "truncate " },
         mappings = {
           i = {
@@ -31,6 +34,8 @@ return {
             i = {
               ["<C-r>"] = lga_actions.quote_prompt({ postfix = " -g " }),  -- add glob filter
               ["<C-t>"] = lga_actions.quote_prompt({ postfix = " -t " }),  -- add type filter
+              ["<C-f>"] = lga_actions.quote_prompt({ postfix = " -F" }),   -- fixed string (literal match)
+              ["<C-h>"] = lga_actions.quote_prompt({ postfix = " --hidden" }),  -- include hidden files
               ["<C-space>"] = lga_actions.to_fuzzy_refine,  -- fuzzy filter results
             },
           },
@@ -46,7 +51,9 @@ return {
     local keymap = vim.keymap -- for conciseness
 
     keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
+    keymap.set("n", "<leader>fF", "<cmd>Telescope find_files hidden=true<cr>", { desc = "Fuzzy find files (include hidden)" })
     keymap.set("n", "<leader>fo", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
+    keymap.set("n", "<leader>fb", "<cmd>Telescope buffers<cr>", { desc = "Open buffers" })
     keymap.set("n", "<leader>fs", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>", { desc = "Find string in cwd (with args)" })
     keymap.set("n", "<leader>fu", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
     keymap.set("n", "<leader>fh", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Search In Current Buffer" })
