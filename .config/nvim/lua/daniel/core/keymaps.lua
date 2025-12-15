@@ -93,6 +93,7 @@ keymap.set("n", "<leader>lw", ":set invwrap<CR>", opts)
 -- Diagnostic display config
 vim.diagnostic.config({
     virtual_text = false,
+    float = { source = true },
     signs = {
         text = {
             [vim.diagnostic.severity.ERROR] = "●",
@@ -112,7 +113,7 @@ local virtual_text_visible = false
 function ToggleVirtualText()
     virtual_text_visible = not virtual_text_visible
     vim.diagnostic.config({
-        virtual_text = virtual_text_visible,
+        virtual_text = virtual_text_visible and { source = true } or false,
     })
 end
 
