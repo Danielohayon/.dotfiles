@@ -22,11 +22,26 @@ HIST_STAMPS='%d/%m %H:%M '
 # Enable colors
 autoload -U colors && colors
 
-# Set prompt (similar to bash version)
+# Git branch for prompt
+git_branch() {
+    local branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+    [[ -n "$branch" ]] && echo "($branch) "
+}
+
+# Short path - last 3 directories
+short_path() {
+    local p="${PWD/#$HOME/~}"
+    echo "$p" | awk -F/ '{if(NF<=3) print $0; else print $(NF-2)"/"$(NF-1)"/"$NF}'
+}
+
+# Enable prompt substitution
+setopt PROMPT_SUBST
+
+# Set prompt
 if [[ "$TERM" == xterm-color || "$TERM" == *-256color ]]; then
-    PROMPT='%F{green}%n@%m%f:%F{blue}%~%f$ '
+    PROMPT='%F{yellow}$(git_branch)%f%F{blue}$(short_path)%f$ '
 else
-    PROMPT='%n@%m:%~$ '
+    PROMPT='$(git_branch)$(short_path)$ '
 fi
 
 # Enable color support and aliases
