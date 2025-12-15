@@ -44,7 +44,7 @@ return {
 				"stylua", -- lua formatter
 				"isort", -- python formatter
 				"black", -- python formatter
-				"pylint", -- python linter
+				"mypy", -- python type checker
 				"debugpy",
 			},
 		})

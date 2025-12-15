@@ -6,6 +6,7 @@ return {
     -- import comment plugin safely
     local gitsigns = require("gitsigns")
     gitsigns.setup({
+      sign_priority = 100,  -- High priority so git signs aren't overridden
 			on_attach = function(bufnr)
 				local gs = package.loaded.gitsigns
 

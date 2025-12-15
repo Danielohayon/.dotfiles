@@ -90,11 +90,24 @@ keymap.set("n", "<A-k>", ":m .-2<CR>==", opts)
 opts.desc = "Toggle Wrap"
 keymap.set("n", "<leader>lw", ":set invwrap<CR>", opts)
 
--- Control Virtual Text
-vim.diagnostic.config({ 
-	virtual_text = false, -- Frist set it to false by default 
+-- Diagnostic display config
+vim.diagnostic.config({
+    virtual_text = false,
+    signs = {
+        text = {
+            [vim.diagnostic.severity.ERROR] = "●",
+            [vim.diagnostic.severity.WARN] = "●",
+            [vim.diagnostic.severity.HINT] = "",
+            [vim.diagnostic.severity.INFO] = "",
+        },
+        priority = 50,  -- Lower than gitsigns (100) so both can show
+    },
+    underline = true,
+    update_in_insert = false,
+    severity_sort = true,
 })
 
+-- Toggle Virtual Text
 local virtual_text_visible = false
 function ToggleVirtualText()
     virtual_text_visible = not virtual_text_visible
