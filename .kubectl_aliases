@@ -1,0 +1,96 @@
+# Kubectl FZF Shortcuts
+# Interactive kubectl commands using fzf
+
+# Describe a pod interactively
+# Lists pods via fzf, then shows describe output in less (starting from bottom)
+wpod() {
+    local pod
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    if [[ -n "$pod" ]]; then
+        kubectl describe pod "$pod" "$@" | less -R +G
+    fi
+}
+
+# View pod logs interactively
+wlogs() {
+    local pod
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    if [[ -n "$pod" ]]; then
+        kubectl logs "$pod" "$@" | less -R +G
+    fi
+}
+
+# Follow pod logs interactively (live tail)
+wlogsf() {
+    local pod
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    if [[ -n "$pod" ]]; then
+        kubectl logs -f "$pod" "$@"
+    fi
+}
+
+# Exec into a pod interactively
+wexec() {
+    local pod
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    if [[ -n "$pod" ]]; then
+        kubectl exec -it "$pod" "$@" -- /bin/bash || kubectl exec -it "$pod" "$@" -- /bin/sh
+    fi
+}
+
+# Delete a pod interactively
+wdel() {
+    local pod
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod to DELETE: ")
+    if [[ -n "$pod" ]]; then
+        echo "Deleting pod: $pod"
+        kubectl delete pod "$pod" "$@"
+    fi
+}
+
+# Describe a service interactively
+wsvc() {
+    local svc
+    svc=$(kubectl get svc --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select service: ")
+    if [[ -n "$svc" ]]; then
+        kubectl describe svc "$svc" "$@" | less -R +G
+    fi
+}
+
+# Describe a deployment interactively
+wdeploy() {
+    local deploy
+    deploy=$(kubectl get deployments --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select deployment: ")
+    if [[ -n "$deploy" ]]; then
+        kubectl describe deployment "$deploy" "$@" | less -R +G
+    fi
+}
+
+# Get events for a pod interactively
+wevents() {
+    local pod
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    if [[ -n "$pod" ]]; then
+        kubectl get events --field-selector involvedObject.name="$pod" "$@" | less -R +G
+    fi
+}
+
+# Switch namespace interactively
+wns() {
+    local ns
+    ns=$(kubectl get namespaces --no-headers -o custom-columns=":metadata.name" | fzf --height=40% --reverse --prompt="Select namespace: ")
+    if [[ -n "$ns" ]]; then
+        kubectl config set-context --current --namespace="$ns"
+        echo "Switched to namespace: $ns"
+    fi
+}
+
+# Port-forward to a pod interactively
+wpf() {
+    local pod port
+    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    if [[ -n "$pod" ]]; then
+        read -p "Enter port (local:remote, e.g., 8080:80): " port
+        kubectl port-forward "$pod" "$port" "$@"
+    fi
+}
