@@ -1,11 +1,77 @@
 # Kubectl FZF Shortcuts
 # Interactive kubectl commands using fzf
 
+# Main menu - list all kubectl shortcuts
+ku() {
+    local cmd
+    cmd=$(cat <<'EOF' | fzf --height=50% --reverse --prompt="kubectl shortcut: " --with-nth=1.. --delimiter='\t'
+wpod	Describe a pod
+wlogs	View pod logs
+wlogsf	Follow pod logs (live tail)
+wlogsp	Logs from previous crashed container
+wlogst	Logs with timestamps
+wlogsd	Tail logs from all pods in a deployment
+wlogsc	Select container for logs (multi-container)
+wexec	Exec into a pod
+wdel	Delete a pod
+wsvc	Describe a service
+wdeploy	Describe a deployment
+wevents	Get events for a pod
+wns	Switch namespace
+wctx	Switch context (cluster)
+wpf	Port-forward to a pod
+wbad	Find pods in bad states
+wevall	All events sorted by time
+wevwarn	Warning events only
+wtrouble	Troubleshoot pod (describe + events + logs)
+wtop	Pod resource usage
+wtopn	Node resource usage
+wtopc	Pods sorted by CPU
+wtopm	Pods sorted by memory
+wsecret	View decoded secret
+wcm	View configmap
+wrestart	Rolling restart deployment
+wrollback	Rollback deployment
+wrollout	Watch rollout status
+wscale	Scale deployment
+wyaml	Get YAML of any resource
+wdebug	Run debug pod (curl/dig)
+wcp	Copy file from pod
+wpodip	Get pod IP
+wpodnode	Get node where pod runs
+wnodepods	List pods on a node
+wwatch	Watch pods (auto-refresh)
+wimage	Find pods by image name
+wall	Overview (pods + svc + deploy)
+EOF
+    )
+    cmd=$(echo "$cmd" | awk -F'\t' '{print $1}')
+    if [[ -n "$cmd" ]]; then
+        # Execute the selected command
+        eval "$cmd"
+    fi
+}
+
+# Helper: select a pod with full info displayed, returns pod name
+_kfzf_pod() {
+    kubectl get pods "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select pod: " | awk '{print $1}'
+}
+
+# Helper: select a service with full info displayed
+_kfzf_svc() {
+    kubectl get svc "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select service: " | awk '{print $1}'
+}
+
+# Helper: select a deployment with full info displayed
+_kfzf_deploy() {
+    kubectl get deployments "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select deployment: " | awk '{print $1}'
+}
+
 # Describe a pod interactively
 # Lists pods via fzf, then shows describe output in less (starting from bottom)
 wpod() {
     local pod
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         kubectl describe pod "$pod" "$@" | less -R +G
     fi
@@ -14,7 +80,7 @@ wpod() {
 # View pod logs interactively
 wlogs() {
     local pod
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         kubectl logs "$pod" "$@" | less -R +G
     fi
@@ -23,7 +89,7 @@ wlogs() {
 # Follow pod logs interactively (live tail)
 wlogsf() {
     local pod
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         kubectl logs -f "$pod" "$@"
     fi
@@ -32,7 +98,7 @@ wlogsf() {
 # Exec into a pod interactively
 wexec() {
     local pod
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         kubectl exec -it "$pod" "$@" -- /bin/bash || kubectl exec -it "$pod" "$@" -- /bin/sh
     fi
@@ -41,7 +107,7 @@ wexec() {
 # Delete a pod interactively
 wdel() {
     local pod
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod to DELETE: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         echo "Deleting pod: $pod"
         kubectl delete pod "$pod" "$@"
@@ -51,7 +117,7 @@ wdel() {
 # Describe a service interactively
 wsvc() {
     local svc
-    svc=$(kubectl get svc --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select service: ")
+    svc=$(_kfzf_svc "$@")
     if [[ -n "$svc" ]]; then
         kubectl describe svc "$svc" "$@" | less -R +G
     fi
@@ -60,7 +126,7 @@ wsvc() {
 # Describe a deployment interactively
 wdeploy() {
     local deploy
-    deploy=$(kubectl get deployments --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select deployment: ")
+    deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
         kubectl describe deployment "$deploy" "$@" | less -R +G
     fi
@@ -69,7 +135,7 @@ wdeploy() {
 # Get events for a pod interactively
 wevents() {
     local pod
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         kubectl get events --field-selector involvedObject.name="$pod" "$@" | less -R +G
     fi
@@ -78,19 +144,292 @@ wevents() {
 # Switch namespace interactively
 wns() {
     local ns
-    ns=$(kubectl get namespaces --no-headers -o custom-columns=":metadata.name" | fzf --height=40% --reverse --prompt="Select namespace: ")
+    ns=$(kubectl get namespaces | fzf --height=40% --reverse --header-lines=1 --prompt="Select namespace: " | awk '{print $1}')
     if [[ -n "$ns" ]]; then
         kubectl config set-context --current --namespace="$ns"
         echo "Switched to namespace: $ns"
     fi
 }
 
+# Switch context (cluster) interactively
+wctx() {
+    local ctx
+    ctx=$(kubectl config get-contexts | fzf --height=40% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $1}')
+    # Handle the '*' marker for current context
+    [[ "$ctx" == "*" ]] && ctx=$(kubectl config get-contexts | fzf --height=40% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $2}')
+    if [[ -n "$ctx" && "$ctx" != "*" ]]; then
+        kubectl config use-context "$ctx"
+    fi
+}
+
 # Port-forward to a pod interactively
 wpf() {
     local pod port
-    pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" "$@" | fzf --height=40% --reverse --prompt="Select pod: ")
+    pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
-        read -p "Enter port (local:remote, e.g., 8080:80): " port
+        echo -n "Enter port (local:remote, e.g., 8080:80): "
+        read port
         kubectl port-forward "$pod" "$port" "$@"
     fi
+}
+
+# ============================================
+# Logs helpers
+# ============================================
+
+# View logs from previous crashed container
+wlogsp() {
+    local pod
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        kubectl logs "$pod" --previous "$@" | less -R +G
+    fi
+}
+
+# View logs with timestamps
+wlogst() {
+    local pod
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        kubectl logs "$pod" --timestamps "$@" | less -R +G
+    fi
+}
+
+# Tail logs from all pods of a deployment
+wlogsd() {
+    local deploy
+    deploy=$(_kfzf_deploy "$@")
+    if [[ -n "$deploy" ]]; then
+        kubectl logs -f "deployment/$deploy" --all-containers=true "$@"
+    fi
+}
+
+# Select container in multi-container pod for logs
+wlogsc() {
+    local pod container
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        container=$(kubectl get pod "$pod" -o jsonpath='{.spec.containers[*].name}' "$@" | tr ' ' '\n' | fzf --height=40% --reverse --prompt="Select container: ")
+        if [[ -n "$container" ]]; then
+            kubectl logs "$pod" -c "$container" "$@" | less -R +G
+        fi
+    fi
+}
+
+# ============================================
+# Troubleshooting
+# ============================================
+
+# Find pods in bad states (CrashLoopBackOff, Error, ImagePullBackOff, Pending)
+wbad() {
+    echo "=== Pods in bad states ==="
+    kubectl get pods --all-namespaces "$@" | grep -E '(CrashLoopBackOff|Error|ImagePullBackOff|Pending|Init:|ErrImagePull|CreateContainerConfigError)' | less -R
+}
+
+# Get all events sorted by time (most recent last)
+wevall() {
+    kubectl get events --sort-by='.lastTimestamp' "$@" | less -R +G
+}
+
+# Show recent warning events only
+wevwarn() {
+    kubectl get events --field-selector type=Warning --sort-by='.lastTimestamp' "$@" | less -R +G
+}
+
+# Quick pod troubleshoot: shows describe + events + logs in one view
+wtrouble() {
+    local pod
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        {
+            echo "=============== DESCRIBE ==============="
+            kubectl describe pod "$pod" "$@"
+            echo -e "\n=============== EVENTS ==============="
+            kubectl get events --field-selector involvedObject.name="$pod" "$@"
+            echo -e "\n=============== LOGS (last 50 lines) ==============="
+            kubectl logs "$pod" --tail=50 "$@" 2>/dev/null || echo "No logs available"
+        } | less -R +G
+    fi
+}
+
+# ============================================
+# Resource usage
+# ============================================
+
+# Show pod resource usage (requires metrics-server)
+wtop() {
+    kubectl top pods "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Pod resources: "
+}
+
+# Show node resource usage
+wtopn() {
+    kubectl top nodes "$@"
+}
+
+# Show pods sorted by CPU usage
+wtopc() {
+    kubectl top pods "$@" --sort-by=cpu
+}
+
+# Show pods sorted by memory usage
+wtopm() {
+    kubectl top pods "$@" --sort-by=memory
+}
+
+# ============================================
+# Secrets and ConfigMaps
+# ============================================
+
+# View decoded secret interactively
+wsecret() {
+    local secret key
+    secret=$(kubectl get secrets "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select secret: " | awk '{print $1}')
+    if [[ -n "$secret" ]]; then
+        echo "=== Secret: $secret ==="
+        kubectl get secret "$secret" -o json "$@" | jq -r '.data | to_entries[] | "\(.key): \(.value | @base64d)"'
+    fi
+}
+
+# View configmap interactively
+wcm() {
+    local cm
+    cm=$(kubectl get configmaps "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select configmap: " | awk '{print $1}')
+    if [[ -n "$cm" ]]; then
+        kubectl describe configmap "$cm" "$@" | less -R +G
+    fi
+}
+
+# ============================================
+# Deployment operations
+# ============================================
+
+# Restart a deployment (rolling restart)
+wrestart() {
+    local deploy
+    deploy=$(_kfzf_deploy "$@")
+    if [[ -n "$deploy" ]]; then
+        echo "Restarting deployment: $deploy"
+        kubectl rollout restart deployment "$deploy" "$@"
+    fi
+}
+
+# Rollback a deployment
+wrollback() {
+    local deploy
+    deploy=$(_kfzf_deploy "$@")
+    if [[ -n "$deploy" ]]; then
+        echo "Rolling back deployment: $deploy"
+        kubectl rollout undo deployment "$deploy" "$@"
+    fi
+}
+
+# Watch rollout status
+wrollout() {
+    local deploy
+    deploy=$(_kfzf_deploy "$@")
+    if [[ -n "$deploy" ]]; then
+        kubectl rollout status deployment "$deploy" "$@"
+    fi
+}
+
+# Scale a deployment interactively
+wscale() {
+    local deploy replicas
+    deploy=$(_kfzf_deploy "$@")
+    if [[ -n "$deploy" ]]; then
+        echo -n "Enter replica count: "
+        read replicas
+        kubectl scale deployment "$deploy" --replicas="$replicas" "$@"
+    fi
+}
+
+# ============================================
+# Quick access
+# ============================================
+
+# Get YAML of any resource (for backup/editing)
+wyaml() {
+    local resource item
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob" | fzf --height=40% --reverse --prompt="Select resource type: ")
+    if [[ -n "$resource" ]]; then
+        item=$(kubectl get "$resource" "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select $resource: " | awk '{print $1}')
+        if [[ -n "$item" ]]; then
+            kubectl get "$resource" "$item" -o yaml "$@" | less -R
+        fi
+    fi
+}
+
+# Run a debug pod with common tools (curl, dig, etc)
+wdebug() {
+    local ns_flag=""
+    [[ "$*" == *"-n"* ]] && ns_flag="$@"
+    echo "Starting debug pod (alpine with curl, dig, wget)..."
+    kubectl run debug-pod-$RANDOM --rm -it --image=alpine/curl --restart=Never $ns_flag -- /bin/sh
+}
+
+# Copy file from pod interactively
+wcp() {
+    local pod src dest
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        echo -n "Source path in pod: "
+        read src
+        echo -n "Local destination: "
+        read dest
+        kubectl cp "$pod:$src" "$dest" "$@"
+    fi
+}
+
+# Get pod IP
+wpodip() {
+    local pod
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        kubectl get pod "$pod" -o jsonpath='{.status.podIP}' "$@"
+        echo
+    fi
+}
+
+# Show which node a pod is on
+wpodnode() {
+    local pod
+    pod=$(_kfzf_pod "$@")
+    if [[ -n "$pod" ]]; then
+        kubectl get pod "$pod" -o jsonpath='{.spec.nodeName}' "$@"
+        echo
+    fi
+}
+
+# Show all pods on a specific node
+wnodepods() {
+    local node
+    node=$(kubectl get nodes | fzf --height=40% --reverse --header-lines=1 --prompt="Select node: " | awk '{print $1}')
+    if [[ -n "$node" ]]; then
+        kubectl get pods --all-namespaces --field-selector spec.nodeName="$node" "$@"
+    fi
+}
+
+# Watch pods (auto-refresh)
+wwatch() {
+    watch -n 2 "kubectl get pods $*"
+}
+
+# Find pods by image name
+wimage() {
+    local image
+    echo -n "Image name (partial match): "
+    read image
+    kubectl get pods -o jsonpath="{range .items[*]}{.metadata.name}{'\t'}{.spec.containers[*].image}{'\n'}{end}" "$@" | grep -i "$image"
+}
+
+# Quick get all: pods, svc, deploy in one view
+wall() {
+    {
+        echo "=== PODS ==="
+        kubectl get pods "$@"
+        echo -e "\n=== SERVICES ==="
+        kubectl get svc "$@"
+        echo -e "\n=== DEPLOYMENTS ==="
+        kubectl get deployments "$@"
+    } | less -R
 }

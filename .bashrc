@@ -74,6 +74,10 @@ alias k=kubectl
 complete -o default -F __start_kubectl k
 # kubectl auto completion
 source <(kubectl completion bash)
+# kubectl fzf aliases
+if [ -f ~/.kubectl_aliases ]; then
+    . ~/.kubectl_aliases
+fi
 if ! command -v hl-smi &> /dev/null
 then
     source ~/.virtualenvs/vm/bin/activate
