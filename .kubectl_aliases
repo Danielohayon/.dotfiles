@@ -5,44 +5,55 @@
 ku() {
     local cmd
     cmd=$(cat <<'EOF' | fzf --height=50% --reverse --prompt="kubectl shortcut: " --with-nth=1.. --delimiter='\t'
-wpod	Describe a pod
-wlogs	View pod logs
-wlogsf	Follow pod logs (live tail)
-wlogsp	Logs from previous crashed container
-wlogst	Logs with timestamps
-wlogsd	Tail logs from all pods in a deployment
-wlogsc	Select container for logs (multi-container)
-wexec	Exec into a pod
-wdel	Delete a pod
-wsvc	Describe a service
-wdeploy	Describe a deployment
-wevents	Get events for a pod
-wns	Switch namespace
-wctx	Switch context (cluster)
-wpf	Port-forward to a pod
-wbad	Find pods in bad states
-wevall	All events sorted by time
-wevwarn	Warning events only
-wtrouble	Troubleshoot pod (describe + events + logs)
-wtop	Pod resource usage
-wtopn	Node resource usage
-wtopc	Pods sorted by CPU
-wtopm	Pods sorted by memory
-wsecret	View decoded secret
-wcm	View configmap
-wrestart	Rolling restart deployment
-wrollback	Rollback deployment
-wrollout	Watch rollout status
-wscale	Scale deployment
-wyaml	Get YAML of any resource
-wdebug	Run debug pod (curl/dig)
-wcp	Copy file from pod
-wpodip	Get pod IP
-wpodnode	Get node where pod runs
-wnodepods	List pods on a node
-wwatch	Watch pods (auto-refresh)
-wimage	Find pods by image name
-wall	Overview (pods + svc + deploy)
+kpod	Describe a pod
+klogs	View pod logs
+klogsf	Follow pod logs (live tail)
+klogsp	Logs from previous crashed container
+klogst	Logs with timestamps
+klogsd	Tail logs from all pods in a deployment
+klogsc	Select container for logs (multi-container)
+kexec	Exec into a pod
+kpoddel	Delete a single pod
+ksvc	Describe a service
+kdeploy	Describe a deployment
+kevents	Get events for a pod
+kns	Switch namespace
+kctx	Switch context (cluster)
+kpf	Port-forward to a pod
+kbad	Find pods in bad states
+kevall	All events sorted by time
+kevwarn	Warning events only
+ktrouble	Troubleshoot pod (describe + events + logs)
+ktop	Pod resource usage
+ktopn	Node resource usage
+ktopc	Pods sorted by CPU
+ktopm	Pods sorted by memory
+ksecret	View decoded secret
+kcm	View configmap
+krestart	Rolling restart deployment
+krollback	Rollback deployment
+krollout	Watch rollout status
+kscale	Scale deployment
+kyaml	Get YAML of any resource
+kdebug	Run debug pod (curl/dig)
+kcp	Copy file from pod
+kpodip	Get pod IP
+kpodnode	Get node where pod runs
+knodepods	List pods on a node
+kwatch	Watch pods (auto-refresh)
+kimage	Find pods by image name
+kall	Overview (pods + svc + deploy)
+kdel	Delete resources (multi-select, by type)
+kdela	Delete from ALL types in one view (multi-select)
+gke	Switch GKE cluster (zone -> cluster)
+gkea	Switch GKE cluster (all in one view)
+gar-browse	Browse Artifact Registry (repos -> images -> tags)
+gar-images	List images in a repository
+gar-tags	List tags for an image
+gar-find	Search for tag/digest in image
+kpodimages	Show images used by pods
+kfindimage	Find pods by image name (all namespaces)
+kcheckimage	Compare deployment image vs registry
 EOF
     )
     cmd=$(echo "$cmd" | awk -F'\t' '{print $1}')
@@ -69,7 +80,7 @@ _kfzf_deploy() {
 
 # Describe a pod interactively
 # Lists pods via fzf, then shows describe output in less (starting from bottom)
-wpod() {
+kpod() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -78,7 +89,7 @@ wpod() {
 }
 
 # View pod logs interactively
-wlogs() {
+klogs() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -87,7 +98,7 @@ wlogs() {
 }
 
 # Follow pod logs interactively (live tail)
-wlogsf() {
+klogsf() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -96,7 +107,7 @@ wlogsf() {
 }
 
 # Exec into a pod interactively
-wexec() {
+kexec() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -105,7 +116,7 @@ wexec() {
 }
 
 # Delete a pod interactively
-wdel() {
+kpoddel() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -115,7 +126,7 @@ wdel() {
 }
 
 # Describe a service interactively
-wsvc() {
+ksvc() {
     local svc
     svc=$(_kfzf_svc "$@")
     if [[ -n "$svc" ]]; then
@@ -124,7 +135,7 @@ wsvc() {
 }
 
 # Describe a deployment interactively
-wdeploy() {
+kdeploy() {
     local deploy
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
@@ -133,7 +144,7 @@ wdeploy() {
 }
 
 # Get events for a pod interactively
-wevents() {
+kevents() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -142,7 +153,7 @@ wevents() {
 }
 
 # Switch namespace interactively
-wns() {
+kns() {
     local ns
     ns=$(kubectl get namespaces | fzf --height=40% --reverse --header-lines=1 --prompt="Select namespace: " | awk '{print $1}')
     if [[ -n "$ns" ]]; then
@@ -152,7 +163,7 @@ wns() {
 }
 
 # Switch context (cluster) interactively
-wctx() {
+kctx() {
     local ctx
     ctx=$(kubectl config get-contexts | fzf --height=40% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $1}')
     # Handle the '*' marker for current context
@@ -163,7 +174,7 @@ wctx() {
 }
 
 # Port-forward to a pod interactively
-wpf() {
+kpf() {
     local pod port
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -178,7 +189,7 @@ wpf() {
 # ============================================
 
 # View logs from previous crashed container
-wlogsp() {
+klogsp() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -187,7 +198,7 @@ wlogsp() {
 }
 
 # View logs with timestamps
-wlogst() {
+klogst() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -196,7 +207,7 @@ wlogst() {
 }
 
 # Tail logs from all pods of a deployment
-wlogsd() {
+klogsd() {
     local deploy
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
@@ -205,7 +216,7 @@ wlogsd() {
 }
 
 # Select container in multi-container pod for logs
-wlogsc() {
+klogsc() {
     local pod container
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -221,23 +232,23 @@ wlogsc() {
 # ============================================
 
 # Find pods in bad states (CrashLoopBackOff, Error, ImagePullBackOff, Pending)
-wbad() {
+kbad() {
     echo "=== Pods in bad states ==="
     kubectl get pods --all-namespaces "$@" | grep -E '(CrashLoopBackOff|Error|ImagePullBackOff|Pending|Init:|ErrImagePull|CreateContainerConfigError)' | less -R
 }
 
 # Get all events sorted by time (most recent last)
-wevall() {
+kevall() {
     kubectl get events --sort-by='.lastTimestamp' "$@" | less -R +G
 }
 
 # Show recent warning events only
-wevwarn() {
+kevwarn() {
     kubectl get events --field-selector type=Warning --sort-by='.lastTimestamp' "$@" | less -R +G
 }
 
 # Quick pod troubleshoot: shows describe + events + logs in one view
-wtrouble() {
+ktrouble() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -257,22 +268,22 @@ wtrouble() {
 # ============================================
 
 # Show pod resource usage (requires metrics-server)
-wtop() {
+ktop() {
     kubectl top pods "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Pod resources: "
 }
 
 # Show node resource usage
-wtopn() {
+ktopn() {
     kubectl top nodes "$@"
 }
 
 # Show pods sorted by CPU usage
-wtopc() {
+ktopc() {
     kubectl top pods "$@" --sort-by=cpu
 }
 
 # Show pods sorted by memory usage
-wtopm() {
+ktopm() {
     kubectl top pods "$@" --sort-by=memory
 }
 
@@ -281,7 +292,7 @@ wtopm() {
 # ============================================
 
 # View decoded secret interactively
-wsecret() {
+ksecret() {
     local secret key
     secret=$(kubectl get secrets "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select secret: " | awk '{print $1}')
     if [[ -n "$secret" ]]; then
@@ -291,7 +302,7 @@ wsecret() {
 }
 
 # View configmap interactively
-wcm() {
+kcm() {
     local cm
     cm=$(kubectl get configmaps "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select configmap: " | awk '{print $1}')
     if [[ -n "$cm" ]]; then
@@ -304,7 +315,7 @@ wcm() {
 # ============================================
 
 # Restart a deployment (rolling restart)
-wrestart() {
+krestart() {
     local deploy
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
@@ -314,7 +325,7 @@ wrestart() {
 }
 
 # Rollback a deployment
-wrollback() {
+krollback() {
     local deploy
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
@@ -324,7 +335,7 @@ wrollback() {
 }
 
 # Watch rollout status
-wrollout() {
+krollout() {
     local deploy
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
@@ -333,7 +344,7 @@ wrollout() {
 }
 
 # Scale a deployment interactively
-wscale() {
+kscale() {
     local deploy replicas
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
@@ -348,7 +359,7 @@ wscale() {
 # ============================================
 
 # Get YAML of any resource (for backup/editing)
-wyaml() {
+kyaml() {
     local resource item
     resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob" | fzf --height=40% --reverse --prompt="Select resource type: ")
     if [[ -n "$resource" ]]; then
@@ -360,7 +371,7 @@ wyaml() {
 }
 
 # Run a debug pod with common tools (curl, dig, etc)
-wdebug() {
+kdebug() {
     local ns_flag=""
     [[ "$*" == *"-n"* ]] && ns_flag="$@"
     echo "Starting debug pod (alpine with curl, dig, wget)..."
@@ -368,7 +379,7 @@ wdebug() {
 }
 
 # Copy file from pod interactively
-wcp() {
+kcp() {
     local pod src dest
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -381,7 +392,7 @@ wcp() {
 }
 
 # Get pod IP
-wpodip() {
+kpodip() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -391,7 +402,7 @@ wpodip() {
 }
 
 # Show which node a pod is on
-wpodnode() {
+kpodnode() {
     local pod
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
@@ -401,7 +412,7 @@ wpodnode() {
 }
 
 # Show all pods on a specific node
-wnodepods() {
+knodepods() {
     local node
     node=$(kubectl get nodes | fzf --height=40% --reverse --header-lines=1 --prompt="Select node: " | awk '{print $1}')
     if [[ -n "$node" ]]; then
@@ -410,12 +421,12 @@ wnodepods() {
 }
 
 # Watch pods (auto-refresh)
-wwatch() {
+kwatch() {
     watch -n 2 "kubectl get pods $*"
 }
 
 # Find pods by image name
-wimage() {
+kimage() {
     local image
     echo -n "Image name (partial match): "
     read image
@@ -423,7 +434,7 @@ wimage() {
 }
 
 # Quick get all: pods, svc, deploy in one view
-wall() {
+kall() {
     {
         echo "=== PODS ==="
         kubectl get pods "$@"
@@ -432,4 +443,238 @@ wall() {
         echo -e "\n=== DEPLOYMENTS ==="
         kubectl get deployments "$@"
     } | less -R
+}
+
+# Delete any resource type with multi-select
+# Use Tab to mark multiple items, Enter to confirm
+kdel() {
+    local resource items
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nreplicaset" | fzf --height=40% --reverse --prompt="Select resource type: ")
+    if [[ -n "$resource" ]]; then
+        echo "Use Tab to select multiple, Enter to confirm deletion"
+        items=$(kubectl get "$resource" "$@" | fzf --height=50% --reverse --header-lines=1 --multi --prompt="Select $resource(s) to DELETE: " | awk '{print $1}')
+        if [[ -n "$items" ]]; then
+            echo "Will delete the following $resource(s):"
+            echo "$items"
+            echo -n "Confirm? (y/N): "
+            read confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                echo "$items" | xargs -I {} kubectl delete "$resource" {} "$@"
+            else
+                echo "Cancelled."
+            fi
+        fi
+    fi
+}
+
+# Delete from all resource types in one view (multi-select)
+# Shows pods, deployments, services, jobs, etc. all together
+kdela() {
+    local selections
+    echo "Fetching all resources..."
+
+    # Gather all resources with TYPE prefix for identification
+    selections=$(
+        {
+            kubectl get pods --no-headers "$@" 2>/dev/null | awk '{print "pod\t" $0}'
+            kubectl get deployments --no-headers "$@" 2>/dev/null | awk '{print "deploy\t" $0}'
+            kubectl get services --no-headers "$@" 2>/dev/null | awk '{print "svc\t" $0}'
+            kubectl get jobs --no-headers "$@" 2>/dev/null | awk '{print "job\t" $0}'
+            kubectl get cronjobs --no-headers "$@" 2>/dev/null | awk '{print "cronjob\t" $0}'
+            kubectl get configmaps --no-headers "$@" 2>/dev/null | awk '{print "cm\t" $0}'
+            kubectl get secrets --no-headers "$@" 2>/dev/null | awk '{print "secret\t" $0}'
+            kubectl get statefulsets --no-headers "$@" 2>/dev/null | awk '{print "sts\t" $0}'
+            kubectl get daemonsets --no-headers "$@" 2>/dev/null | awk '{print "ds\t" $0}'
+            kubectl get replicasets --no-headers "$@" 2>/dev/null | awk '{print "rs\t" $0}'
+            kubectl get pvc --no-headers "$@" 2>/dev/null | awk '{print "pvc\t" $0}'
+            kubectl get ingress --no-headers "$@" 2>/dev/null | awk '{print "ing\t" $0}'
+        } | fzf --height=60% --reverse --multi --prompt="Select resource(s) to DELETE (Tab=select): " \
+              --header="TYPE      NAME                                      STATUS" \
+              --preview-window=hidden
+    )
+
+    if [[ -n "$selections" ]]; then
+        echo -e "\nWill delete:"
+        echo "$selections" | while read -r line; do
+            local type=$(echo "$line" | awk '{print $1}')
+            local name=$(echo "$line" | awk '{print $2}')
+            echo "  $type/$name"
+        done
+
+        echo -n -e "\nConfirm? (y/N): "
+        read confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            echo "$selections" | while read -r line; do
+                local type=$(echo "$line" | awk '{print $1}')
+                local name=$(echo "$line" | awk '{print $2}')
+                echo "Deleting $type/$name..."
+                kubectl delete "$type" "$name" "$@"
+            done
+            echo "Done."
+        else
+            echo "Cancelled."
+        fi
+    fi
+}
+
+# ============================================
+# GKE Cluster switching
+# ============================================
+
+# Switch GKE cluster interactively (zone -> cluster)
+gke() {
+    local project zone cluster
+
+    # Get current project
+    project=$(gcloud config get-value project 2>/dev/null)
+    echo "Project: $project"
+
+    # List zones that have clusters
+    echo "Fetching available zones..."
+    zone=$(gcloud container clusters list --project "$project" --format="value(location)" 2>/dev/null | sort -u | fzf --height=40% --reverse --prompt="Select zone: ")
+    [[ -z "$zone" ]] && return
+
+    # List clusters in that zone
+    echo "Fetching clusters in $zone..."
+    cluster=$(gcloud container clusters list --project "$project" --filter="location:$zone" --format="table(name,status,currentNodeCount)" 2>/dev/null | fzf --height=40% --reverse --header-lines=1 --prompt="Select cluster: " | awk '{print $1}')
+    [[ -z "$cluster" ]] && return
+
+    echo "Switching to cluster: $cluster (zone: $zone)"
+    gcloud container clusters get-credentials "$cluster" --zone "$zone" --project "$project"
+}
+
+# Switch GKE cluster - all clusters in one view
+gkea() {
+    local project selection cluster zone
+
+    # Get current project
+    project=$(gcloud config get-value project 2>/dev/null)
+    echo "Project: $project"
+
+    # List all clusters with zone info
+    echo "Fetching all clusters..."
+    selection=$(gcloud container clusters list --project "$project" --format="table(name,location,status,currentNodeCount)" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Select cluster: ")
+    [[ -z "$selection" ]] && return
+
+    cluster=$(echo "$selection" | awk '{print $1}')
+    zone=$(echo "$selection" | awk '{print $2}')
+
+    echo "Switching to cluster: $cluster (zone: $zone)"
+    gcloud container clusters get-credentials "$cluster" --zone "$zone" --project "$project"
+}
+
+# ============================================
+# Container Registry helpers (GCP Artifact Registry)
+# ============================================
+
+# Set default artifact registry path (customize this)
+: ${GAR_DEFAULT_REPO:=""}
+
+# List images in a GCP Artifact Registry repository
+# Usage: gar-images [repository-path]
+gar-images() {
+    local repo="${1:-$GAR_DEFAULT_REPO}"
+    if [[ -z "$repo" ]]; then
+        echo "Usage: gar-images <repository-path>"
+        echo "Example: gar-images us-central1-docker.pkg.dev/my-project/my-repo"
+        echo "Or set GAR_DEFAULT_REPO in your shell config"
+        return 1
+    fi
+    gcloud artifacts docker images list "$repo" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Images: "
+}
+
+# List tags for an image in Artifact Registry
+# Usage: gar-tags <image-path>
+gar-tags() {
+    local image="${1:-}"
+    if [[ -z "$image" ]]; then
+        echo "Usage: gar-tags <image-path>"
+        echo "Example: gar-tags us-central1-docker.pkg.dev/my-project/my-repo/my-image"
+        return 1
+    fi
+    gcloud artifacts docker tags list "$image" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Tags: "
+}
+
+# Search for a tag/digest across an image
+# Usage: gar-find <image-path> <search-term>
+gar-find() {
+    local image="${1:-}"
+    local search="${2:-}"
+    if [[ -z "$image" || -z "$search" ]]; then
+        echo "Usage: gar-find <image-path> <search-term>"
+        echo "Example: gar-find us-central1-docker.pkg.dev/my-project/my-repo/my-image 5a3fd97"
+        return 1
+    fi
+    gcloud artifacts docker tags list "$image" 2>/dev/null | grep -i "$search"
+}
+
+# Interactive: browse repos -> images -> tags
+gar-browse() {
+    local project region repo image tag
+
+    # Get current project or let user input
+    project=$(gcloud config get-value project 2>/dev/null)
+    echo "Project: $project"
+
+    # List repositories
+    echo "Fetching repositories..."
+    repo=$(gcloud artifacts repositories list --format="value(name,format)" 2>/dev/null | fzf --height=40% --reverse --prompt="Select repository: " | awk '{print $1}')
+    [[ -z "$repo" ]] && return
+
+    # Get region from repo
+    region=$(gcloud artifacts repositories describe "$repo" --format="value(name)" 2>/dev/null | cut -d'/' -f4)
+
+    local repo_path="${region}-docker.pkg.dev/${project}/${repo}"
+    echo "Repository: $repo_path"
+
+    # List images
+    echo "Fetching images..."
+    image=$(gcloud artifacts docker images list "$repo_path" --format="table(package)" 2>/dev/null | fzf --height=40% --reverse --header-lines=1 --prompt="Select image: " | awk '{print $1}')
+    [[ -z "$image" ]] && return
+
+    # List tags
+    echo "Fetching tags for $image..."
+    tag=$(gcloud artifacts docker tags list "$image" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Select tag: ")
+
+    if [[ -n "$tag" ]]; then
+        echo -e "\nSelected: $tag"
+        echo -n "Copy to clipboard? (y/N): "
+        read copy
+        if [[ "$copy" =~ ^[Yy]$ ]]; then
+            echo "$tag" | awk '{print $1}' | tr -d '\n' | pbcopy
+            echo "Copied to clipboard!"
+        fi
+    fi
+}
+
+# Show what images pods are currently using
+kpodimages() {
+    echo "=== Pod Images in current namespace ==="
+    kubectl get pods -o jsonpath="{range .items[*]}{.metadata.name}{'\t'}{range .spec.containers[*]}{.image}{', '}{end}{'\n'}{end}" "$@" | column -t -s $'\t'
+}
+
+# Find pods running a specific image (partial match)
+kfindimage() {
+    local search="$1"
+    if [[ -z "$search" ]]; then
+        echo -n "Image name (partial match): "
+        read search
+    fi
+    echo "=== Pods using image matching '$search' ==="
+    kubectl get pods -o jsonpath="{range .items[*]}{.metadata.name}{'\t'}{.metadata.namespace}{'\t'}{range .spec.containers[*]}{.image}{' '}{end}{'\n'}{end}" --all-namespaces 2>/dev/null | grep -i "$search" | column -t -s $'\t'
+}
+
+# Compare image in deployment vs what's in registry
+kcheckimage() {
+    local deploy image current_tag
+    deploy=$(_kfzf_deploy "$@")
+    if [[ -n "$deploy" ]]; then
+        image=$(kubectl get deployment "$deploy" -o jsonpath='{.spec.template.spec.containers[0].image}' "$@")
+        echo "Current image: $image"
+        echo ""
+        echo "Checking registry for latest tags..."
+        # Extract base image path (without tag)
+        local base_image=$(echo "$image" | cut -d: -f1)
+        gcloud artifacts docker tags list "$base_image" 2>/dev/null | head -20
+    fi
 }
