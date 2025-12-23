@@ -45,6 +45,7 @@ return {
 				"isort", -- python formatter
 				"black", -- python formatter
 				"mypy", -- python type checker
+				"ruff", -- python linter
 				"debugpy",
 			},
 		})

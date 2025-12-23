@@ -44,6 +44,7 @@ Leader key: `<Space>`
 | Key | Action |
 |-----|--------|
 | `<leader>ff` | Find files |
+| `<leader>fF` | Find files (include hidden) |
 | `<leader>fo` | Recent files |
 | `<leader>fs` | Live grep (with args) |
 | `<leader>fS` | Live grep with context preview |
@@ -72,13 +73,19 @@ Leader key: `<Space>`
 | `mm` | Toggle bookmark |
 | `ma` | Add/edit annotation |
 | `mc` | Clean bookmarks in buffer |
-| `mx` | Clear all bookmarks |
-| `mn` | Next bookmark |
-| `mp` | Previous bookmark |
-| `mq` | List bookmarks (quickfix) |
+| `mC` | Clear all bookmarks |
 | `ml` | List bookmarks (telescope) |
 
 **Annotation keywords:** `@t` (todo), `@w` (warning), `@n` (note), `@q` (question)
+
+### Pdbrc Breakpoints (for remote debugging with pdb/pdbpp)
+
+| Key | Action |
+|-----|--------|
+| `<leader>pb` | Toggle breakpoint (writes to .pdbrc) |
+| `<leader>pB` | Clear file breakpoints |
+| `<leader>pX` | Clear all breakpoints |
+| `<leader>pl` | List all breakpoints |
 
 ### Harpoon (Quick File Navigation)
 
@@ -301,3 +308,4 @@ Leader key: `<Space>`
 - **stevearc/oil.nvim** - Edit filesystem like buffer
 - **nvim-lua/plenary.nvim** - Lua utilities
 - **nvim-tree/nvim-web-devicons** - Icons
+- **pdbrc-breakpoints** (custom) - Toggle breakpoints to .pdbrc for pdb/pdbpp
