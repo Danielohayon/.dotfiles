@@ -88,11 +88,11 @@ return {
         api.nvim_win_close(win, true)
         vim.cmd("stopinsert")
       end
-      vim.keymap.set("i", "<CR>", save_and_close, { buffer = edit_buf })
-      vim.keymap.set("n", "<CR>", save_and_close, { buffer = edit_buf })
-      vim.keymap.set("i", "<Esc>", cancel, { buffer = edit_buf })
-      vim.keymap.set("n", "<Esc>", cancel, { buffer = edit_buf })
-      vim.keymap.set("n", "q", cancel, { buffer = edit_buf })
+      vim.keymap.set("i", "<CR>", save_and_close, { buffer = edit_buf, desc = "Save bookmark" })
+      vim.keymap.set("n", "<CR>", save_and_close, { buffer = edit_buf, desc = "Save bookmark" })
+      vim.keymap.set("i", "<Esc>", cancel, { buffer = edit_buf, desc = "Cancel edit" })
+      vim.keymap.set("n", "<Esc>", cancel, { buffer = edit_buf, desc = "Cancel edit" })
+      vim.keymap.set("n", "q", cancel, { buffer = edit_buf, desc = "Cancel edit" })
     end
 
     -- Global keymaps (fast access without leader)

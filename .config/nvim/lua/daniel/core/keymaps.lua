@@ -27,21 +27,21 @@ keymap.set("n", "<leader>li2", "<cmd>set autoindent expandtab tabstop=2 shiftwid
 -- keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 
 
-vim.api.nvim_set_keymap('n', 'L', '6gj', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('n', 'H', '6gk', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('n', 'J', '<Nop>', {noremap = true, silent = true})  -- disable join lines
-vim.api.nvim_set_keymap('v', 'L', '6gj', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('v', 'H', '6gk', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('v', '<', '<gv', {noremap = true, silent = true})
-vim.api.nvim_set_keymap('v', '>', '>gv', {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', 'L', '6gj', {noremap = true, silent = true, desc = "Move 6 lines down"})
+vim.api.nvim_set_keymap('n', 'H', '6gk', {noremap = true, silent = true, desc = "Move 6 lines up"})
+vim.api.nvim_set_keymap('n', 'J', '<Nop>', {noremap = true, silent = true, desc = "Disabled"})
+vim.api.nvim_set_keymap('v', 'L', '6gj', {noremap = true, silent = true, desc = "Move 6 lines down"})
+vim.api.nvim_set_keymap('v', 'H', '6gk', {noremap = true, silent = true, desc = "Move 6 lines up"})
+vim.api.nvim_set_keymap('v', '<', '<gv', {noremap = true, silent = true, desc = "Indent left and reselect"})
+vim.api.nvim_set_keymap('v', '>', '>gv', {noremap = true, silent = true, desc = "Indent right and reselect"})
 
 -- Move by visual lines when wrapped (but still allow 5j to jump 5 actual lines)
-vim.keymap.set({'n', 'v'}, 'j', "v:count == 0 ? 'gj' : 'j'", {expr = true, silent = true})
-vim.keymap.set({'n', 'v'}, 'k', "v:count == 0 ? 'gk' : 'k'", {expr = true, silent = true})
+vim.keymap.set({'n', 'v'}, 'j', "v:count == 0 ? 'gj' : 'j'", {expr = true, silent = true, desc = "Move down (visual line)"})
+vim.keymap.set({'n', 'v'}, 'k', "v:count == 0 ? 'gk' : 'k'", {expr = true, silent = true, desc = "Move up (visual line)"})
 
 -- Mouse scroll by visual lines (for word wrap) - uses viewport scroll with smoothscroll
-vim.keymap.set({'n', 'v', 'i'}, '<ScrollWheelUp>', '3<C-y>', {noremap = true, silent = true})
-vim.keymap.set({'n', 'v', 'i'}, '<ScrollWheelDown>', '3<C-e>', {noremap = true, silent = true})
+vim.keymap.set({'n', 'v', 'i'}, '<ScrollWheelUp>', '3<C-y>', {noremap = true, silent = true, desc = "Scroll up"})
+vim.keymap.set({'n', 'v', 'i'}, '<ScrollWheelDown>', '3<C-e>', {noremap = true, silent = true, desc = "Scroll down"})
 
 
 
@@ -69,23 +69,23 @@ keymap.set("n", "mx", ":<C-U>bp <bar> bd #<CR>", opts)
 
 
 -- Resize Panes
-keymap.set("n", "<S-Down>", ":resize -2<CR>", opts)
-keymap.set("n", "<S-Up>", ":resize +2<CR>", opts)
-keymap.set("n", "<S-Right>", ":vertical resize -2<CR>", opts)
-keymap.set("n", "<S-Left>", ":vertical resize +2<CR>", opts)
+keymap.set("n", "<S-Down>", ":resize -2<CR>", { noremap = true, silent = true, desc = "Resize pane down" })
+keymap.set("n", "<S-Up>", ":resize +2<CR>", { noremap = true, silent = true, desc = "Resize pane up" })
+keymap.set("n", "<S-Right>", ":vertical resize -2<CR>", { noremap = true, silent = true, desc = "Resize pane narrower" })
+keymap.set("n", "<S-Left>", ":vertical resize +2<CR>", { noremap = true, silent = true, desc = "Resize pane wider" })
 
 -- Insert --
--- Press jk fast to exit insert mode 
-keymap.set("i", "jk", "<ESC>", opts)
-keymap.set("i", "kj", "<ESC>", opts)
+-- Press jk fast to exit insert mode
+keymap.set("i", "jk", "<ESC>", { noremap = true, silent = true, desc = "Exit insert mode" })
+keymap.set("i", "kj", "<ESC>", { noremap = true, silent = true, desc = "Exit insert mode" })
 
 -- Move text up and down
-keymap.set("v", "<A-j>", ":m '>+1<CR>gv=gv", opts)
-keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", opts)
-keymap.set("v", "p", '"_dP', opts)
+keymap.set("v", "<A-j>", ":m '>+1<CR>gv=gv", { noremap = true, silent = true, desc = "Move selection down" })
+keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", { noremap = true, silent = true, desc = "Move selection up" })
+keymap.set("v", "p", '"_dP', { noremap = true, silent = true, desc = "Paste without yanking" })
 -- Move text up and down
-keymap.set("n", "<A-j>", ":m .+1<CR>==", opts)
-keymap.set("n", "<A-k>", ":m .-2<CR>==", opts)
+keymap.set("n", "<A-j>", ":m .+1<CR>==", { noremap = true, silent = true, desc = "Move line down" })
+keymap.set("n", "<A-k>", ":m .-2<CR>==", { noremap = true, silent = true, desc = "Move line up" })
 
 opts.desc = "Toggle Wrap"
 keymap.set("n", "<leader>lw", ":set invwrap<CR>", opts)
@@ -117,7 +117,7 @@ function ToggleVirtualText()
     })
 end
 
-vim.api.nvim_set_keymap('n', '<leader>lt', ':lua ToggleVirtualText()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>lt', ':lua ToggleVirtualText()<CR>', { noremap = true, silent = true, desc = "Toggle virtual text" })
 
 -- Copy file path and line range to clipboard (for code references)
 vim.keymap.set('v', 'mc', function()

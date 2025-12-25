@@ -44,6 +44,6 @@ return {
 		})
 		vim.keymap.set("n", "<leader>z", function()
 			vim.cmd("NeoZoomToggle")
-		end, { silent = true, nowait = true })
+		end, { silent = true, nowait = true, desc = "Toggle zoom" })
 	end,
 }
