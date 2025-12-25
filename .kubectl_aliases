@@ -1,10 +1,16 @@
 # Kubectl FZF Shortcuts
 # Interactive kubectl commands using fzf
 
+# Use kubecolor if available (aliases don't work inside functions)
+if command -v kubecolor &> /dev/null; then
+    unalias kubectl 2>/dev/null
+    function kubectl { command kubecolor "$@"; }
+fi
+
 # Main menu - list all kubectl shortcuts
 ku() {
     local cmd
-    cmd=$(cat <<'EOF' | fzf --height=50% --reverse --prompt="kubectl shortcut: " --with-nth=1.. --delimiter='\t'
+    cmd=$(cat <<'EOF' | fzf --height=90% --reverse --prompt="kubectl shortcut: " --with-nth=1.. --delimiter='\t'
 kpod	Describe a pod
 klogs	View pod logs
 klogsf	Follow pod logs (live tail)
@@ -65,17 +71,17 @@ EOF
 
 # Helper: select a pod with full info displayed, returns pod name
 _kfzf_pod() {
-    kubectl get pods "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select pod: " | awk '{print $1}'
+    kubectl get pods --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select pod: " | awk '{print $1}'
 }
 
 # Helper: select a service with full info displayed
 _kfzf_svc() {
-    kubectl get svc "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select service: " | awk '{print $1}'
+    kubectl get svc --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select service: " | awk '{print $1}'
 }
 
 # Helper: select a deployment with full info displayed
 _kfzf_deploy() {
-    kubectl get deployments "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select deployment: " | awk '{print $1}'
+    kubectl get deployments --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select deployment: " | awk '{print $1}'
 }
 
 # Describe a pod interactively
@@ -155,7 +161,7 @@ kevents() {
 # Switch namespace interactively
 kns() {
     local ns
-    ns=$(kubectl get namespaces | fzf --height=40% --reverse --header-lines=1 --prompt="Select namespace: " | awk '{print $1}')
+    ns=$(kubectl get namespaces | fzf --height=90% --reverse --header-lines=1 --prompt="Select namespace: " | awk '{print $1}')
     if [[ -n "$ns" ]]; then
         kubectl config set-context --current --namespace="$ns"
         echo "Switched to namespace: $ns"
@@ -165,9 +171,9 @@ kns() {
 # Switch context (cluster) interactively
 kctx() {
     local ctx
-    ctx=$(kubectl config get-contexts | fzf --height=40% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $1}')
+    ctx=$(kubectl config get-contexts | fzf --height=90% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $1}')
     # Handle the '*' marker for current context
-    [[ "$ctx" == "*" ]] && ctx=$(kubectl config get-contexts | fzf --height=40% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $2}')
+    [[ "$ctx" == "*" ]] && ctx=$(kubectl config get-contexts | fzf --height=90% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $2}')
     if [[ -n "$ctx" && "$ctx" != "*" ]]; then
         kubectl config use-context "$ctx"
     fi
@@ -220,7 +226,7 @@ klogsc() {
     local pod container
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
-        container=$(kubectl get pod "$pod" -o jsonpath='{.spec.containers[*].name}' "$@" | tr ' ' '\n' | fzf --height=40% --reverse --prompt="Select container: ")
+        container=$(kubectl get pod "$pod" -o jsonpath='{.spec.containers[*].name}' "$@" | tr ' ' '\n' | fzf --height=90% --reverse --prompt="Select container: ")
         if [[ -n "$container" ]]; then
             kubectl logs "$pod" -c "$container" "$@" | less -R +G
         fi
@@ -269,7 +275,7 @@ ktrouble() {
 
 # Show pod resource usage (requires metrics-server)
 ktop() {
-    kubectl top pods "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Pod resources: "
+    kubectl top pods "$@" | fzf --height=90% --reverse --header-lines=1 --prompt="Pod resources: "
 }
 
 # Show node resource usage
@@ -294,7 +300,7 @@ ktopm() {
 # View decoded secret interactively
 ksecret() {
     local secret key
-    secret=$(kubectl get secrets "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select secret: " | awk '{print $1}')
+    secret=$(kubectl get secrets "$@" | fzf --height=90% --reverse --header-lines=1 --prompt="Select secret: " | awk '{print $1}')
     if [[ -n "$secret" ]]; then
         echo "=== Secret: $secret ==="
         kubectl get secret "$secret" -o json "$@" | jq -r '.data | to_entries[] | "\(.key): \(.value | @base64d)"'
@@ -304,7 +310,7 @@ ksecret() {
 # View configmap interactively
 kcm() {
     local cm
-    cm=$(kubectl get configmaps "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select configmap: " | awk '{print $1}')
+    cm=$(kubectl get configmaps "$@" | fzf --height=90% --reverse --header-lines=1 --prompt="Select configmap: " | awk '{print $1}')
     if [[ -n "$cm" ]]; then
         kubectl describe configmap "$cm" "$@" | less -R +G
     fi
@@ -361,9 +367,9 @@ kscale() {
 # Get YAML of any resource (for backup/editing)
 kyaml() {
     local resource item
-    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob" | fzf --height=40% --reverse --prompt="Select resource type: ")
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob" | fzf --height=90% --reverse --prompt="Select resource type: ")
     if [[ -n "$resource" ]]; then
-        item=$(kubectl get "$resource" "$@" | fzf --height=40% --reverse --header-lines=1 --prompt="Select $resource: " | awk '{print $1}')
+        item=$(kubectl get "$resource" "$@" | fzf --height=90% --reverse --header-lines=1 --prompt="Select $resource: " | awk '{print $1}')
         if [[ -n "$item" ]]; then
             kubectl get "$resource" "$item" -o yaml "$@" | less -R
         fi
@@ -414,7 +420,7 @@ kpodnode() {
 # Show all pods on a specific node
 knodepods() {
     local node
-    node=$(kubectl get nodes | fzf --height=40% --reverse --header-lines=1 --prompt="Select node: " | awk '{print $1}')
+    node=$(kubectl get nodes | fzf --height=90% --reverse --header-lines=1 --prompt="Select node: " | awk '{print $1}')
     if [[ -n "$node" ]]; then
         kubectl get pods --all-namespaces --field-selector spec.nodeName="$node" "$@"
     fi
@@ -449,10 +455,10 @@ kall() {
 # Use Tab to mark multiple items, Enter to confirm
 kdel() {
     local resource items
-    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nreplicaset" | fzf --height=40% --reverse --prompt="Select resource type: ")
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nreplicaset" | fzf --height=90% --reverse --prompt="Select resource type: ")
     if [[ -n "$resource" ]]; then
         echo "Use Tab to select multiple, Enter to confirm deletion"
-        items=$(kubectl get "$resource" "$@" | fzf --height=50% --reverse --header-lines=1 --multi --prompt="Select $resource(s) to DELETE: " | awk '{print $1}')
+        items=$(kubectl get "$resource" --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --multi --prompt="Select $resource(s) to DELETE: " | awk '{print $1}')
         if [[ -n "$items" ]]; then
             echo "Will delete the following $resource(s):"
             echo "$items"
@@ -474,21 +480,22 @@ kdela() {
     echo "Fetching all resources..."
 
     # Gather all resources with TYPE prefix for identification
+    # Use --force-colors for kubecolor, --ansi for fzf to render colors
     selections=$(
         {
-            kubectl get pods --no-headers "$@" 2>/dev/null | awk '{print "pod\t" $0}'
-            kubectl get deployments --no-headers "$@" 2>/dev/null | awk '{print "deploy\t" $0}'
-            kubectl get services --no-headers "$@" 2>/dev/null | awk '{print "svc\t" $0}'
-            kubectl get jobs --no-headers "$@" 2>/dev/null | awk '{print "job\t" $0}'
-            kubectl get cronjobs --no-headers "$@" 2>/dev/null | awk '{print "cronjob\t" $0}'
-            kubectl get configmaps --no-headers "$@" 2>/dev/null | awk '{print "cm\t" $0}'
-            kubectl get secrets --no-headers "$@" 2>/dev/null | awk '{print "secret\t" $0}'
-            kubectl get statefulsets --no-headers "$@" 2>/dev/null | awk '{print "sts\t" $0}'
-            kubectl get daemonsets --no-headers "$@" 2>/dev/null | awk '{print "ds\t" $0}'
-            kubectl get replicasets --no-headers "$@" 2>/dev/null | awk '{print "rs\t" $0}'
-            kubectl get pvc --no-headers "$@" 2>/dev/null | awk '{print "pvc\t" $0}'
-            kubectl get ingress --no-headers "$@" 2>/dev/null | awk '{print "ing\t" $0}'
-        } | fzf --height=60% --reverse --multi --prompt="Select resource(s) to DELETE (Tab=select): " \
+            kubectl get pods --no-headers --force-colors "$@" 2>/dev/null | awk '{print "pod\t" $0}'
+            kubectl get deployments --no-headers --force-colors "$@" 2>/dev/null | awk '{print "deploy\t" $0}'
+            kubectl get services --no-headers --force-colors "$@" 2>/dev/null | awk '{print "svc\t" $0}'
+            kubectl get jobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "job\t" $0}'
+            kubectl get cronjobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cronjob\t" $0}'
+            kubectl get configmaps --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cm\t" $0}'
+            kubectl get secrets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "secret\t" $0}'
+            kubectl get statefulsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "sts\t" $0}'
+            kubectl get daemonsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "ds\t" $0}'
+            kubectl get replicasets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "rs\t" $0}'
+            kubectl get pvc --no-headers --force-colors "$@" 2>/dev/null | awk '{print "pvc\t" $0}'
+            kubectl get ingress --no-headers --force-colors "$@" 2>/dev/null | awk '{print "ing\t" $0}'
+        } | fzf --height=90% --ansi --reverse --multi --prompt="Select resource(s) to DELETE (Tab=select): " \
               --header="TYPE      NAME                                      STATUS" \
               --preview-window=hidden
     )
@@ -531,12 +538,12 @@ gke() {
 
     # List zones that have clusters
     echo "Fetching available zones..."
-    zone=$(gcloud container clusters list --project "$project" --format="value(location)" 2>/dev/null | sort -u | fzf --height=40% --reverse --prompt="Select zone: ")
+    zone=$(gcloud container clusters list --project "$project" --format="value(location)" 2>/dev/null | sort -u | fzf --height=90% --reverse --prompt="Select zone: ")
     [[ -z "$zone" ]] && return
 
     # List clusters in that zone
     echo "Fetching clusters in $zone..."
-    cluster=$(gcloud container clusters list --project "$project" --filter="location:$zone" --format="table(name,status,currentNodeCount)" 2>/dev/null | fzf --height=40% --reverse --header-lines=1 --prompt="Select cluster: " | awk '{print $1}')
+    cluster=$(gcloud container clusters list --project "$project" --filter="location:$zone" --format="table(name,status,currentNodeCount)" 2>/dev/null | fzf --height=90% --reverse --header-lines=1 --prompt="Select cluster: " | awk '{print $1}')
     [[ -z "$cluster" ]] && return
 
     echo "Switching to cluster: $cluster (zone: $zone)"
@@ -553,7 +560,7 @@ gkea() {
 
     # List all clusters with zone info
     echo "Fetching all clusters..."
-    selection=$(gcloud container clusters list --project "$project" --format="table(name,location,status,currentNodeCount)" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Select cluster: ")
+    selection=$(gcloud container clusters list --project "$project" --format="table(name,location,status,currentNodeCount)" 2>/dev/null | fzf --height=90% --reverse --header-lines=1 --prompt="Select cluster: ")
     [[ -z "$selection" ]] && return
 
     cluster=$(echo "$selection" | awk '{print $1}')
@@ -580,7 +587,7 @@ gar-images() {
         echo "Or set GAR_DEFAULT_REPO in your shell config"
         return 1
     fi
-    gcloud artifacts docker images list "$repo" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Images: "
+    gcloud artifacts docker images list "$repo" 2>/dev/null | fzf --height=90% --reverse --header-lines=1 --prompt="Images: "
 }
 
 # List tags for an image in Artifact Registry
@@ -592,7 +599,7 @@ gar-tags() {
         echo "Example: gar-tags us-central1-docker.pkg.dev/my-project/my-repo/my-image"
         return 1
     fi
-    gcloud artifacts docker tags list "$image" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Tags: "
+    gcloud artifacts docker tags list "$image" 2>/dev/null | fzf --height=90% --reverse --header-lines=1 --prompt="Tags: "
 }
 
 # Search for a tag/digest across an image
@@ -618,7 +625,7 @@ gar-browse() {
 
     # List repositories
     echo "Fetching repositories..."
-    repo=$(gcloud artifacts repositories list --format="value(name,format)" 2>/dev/null | fzf --height=40% --reverse --prompt="Select repository: " | awk '{print $1}')
+    repo=$(gcloud artifacts repositories list --format="value(name,format)" 2>/dev/null | fzf --height=90% --reverse --prompt="Select repository: " | awk '{print $1}')
     [[ -z "$repo" ]] && return
 
     # Get region from repo
@@ -629,12 +636,12 @@ gar-browse() {
 
     # List images
     echo "Fetching images..."
-    image=$(gcloud artifacts docker images list "$repo_path" --format="table(package)" 2>/dev/null | fzf --height=40% --reverse --header-lines=1 --prompt="Select image: " | awk '{print $1}')
+    image=$(gcloud artifacts docker images list "$repo_path" --format="table(package)" 2>/dev/null | fzf --height=90% --reverse --header-lines=1 --prompt="Select image: " | awk '{print $1}')
     [[ -z "$image" ]] && return
 
     # List tags
     echo "Fetching tags for $image..."
-    tag=$(gcloud artifacts docker tags list "$image" 2>/dev/null | fzf --height=50% --reverse --header-lines=1 --prompt="Select tag: ")
+    tag=$(gcloud artifacts docker tags list "$image" 2>/dev/null | fzf --height=90% --reverse --header-lines=1 --prompt="Select tag: ")
 
     if [[ -n "$tag" ]]; then
         echo -e "\nSelected: $tag"
