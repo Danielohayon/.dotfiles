@@ -22,6 +22,8 @@ kexec	Exec into a pod
 kpoddel	Delete a single pod
 ksvc	Describe a service
 kdeploy	Describe a deployment
+kjob	Describe a job
+knode	Describe a node
 kevents	Get events for a pod
 kns	Switch namespace
 kctx	Switch context (cluster)
@@ -49,6 +51,7 @@ knodepods	List pods on a node
 kwatch	Watch pods (auto-refresh)
 kimage	Find pods by image name
 kall	Overview (pods + svc + deploy)
+kdesca	Describe any resource (all types in one view)
 kdel	Delete resources (multi-select, by type)
 kdela	Delete from ALL types in one view (multi-select)
 gke	Switch GKE cluster (zone -> cluster)
@@ -82,6 +85,16 @@ _kfzf_svc() {
 # Helper: select a deployment with full info displayed
 _kfzf_deploy() {
     kubectl get deployments --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select deployment: " | awk '{print $1}'
+}
+
+# Helper: select a job with full info displayed
+_kfzf_job() {
+    kubectl get jobs --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select job: " | awk '{print $1}'
+}
+
+# Helper: select a node with full info displayed
+_kfzf_node() {
+    kubectl get nodes --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select node: " | awk '{print $1}'
 }
 
 # Describe a pod interactively
@@ -146,6 +159,24 @@ kdeploy() {
     deploy=$(_kfzf_deploy "$@")
     if [[ -n "$deploy" ]]; then
         kubectl describe deployment "$deploy" "$@" | less -R +G
+    fi
+}
+
+# Describe a job interactively
+kjob() {
+    local job
+    job=$(_kfzf_job "$@")
+    if [[ -n "$job" ]]; then
+        kubectl describe job "$job" "$@" | less -R +G
+    fi
+}
+
+# Describe a node interactively
+knode() {
+    local node
+    node=$(_kfzf_node "$@")
+    if [[ -n "$node" ]]; then
+        kubectl describe node "$node" "$@" | less -R +G
     fi
 }
 
@@ -470,6 +501,40 @@ kdel() {
                 echo "Cancelled."
             fi
         fi
+    fi
+}
+
+# Describe any resource from all types in one view
+# Shows pods, deployments, services, jobs, etc. all together
+kdesca() {
+    local selection type name
+    echo "Fetching all resources..."
+
+    # Gather all resources with TYPE prefix for identification
+    selection=$(
+        {
+            kubectl get pods --no-headers --force-colors "$@" 2>/dev/null | awk '{print "pod\t" $0}'
+            kubectl get deployments --no-headers --force-colors "$@" 2>/dev/null | awk '{print "deploy\t" $0}'
+            kubectl get services --no-headers --force-colors "$@" 2>/dev/null | awk '{print "svc\t" $0}'
+            kubectl get jobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "job\t" $0}'
+            kubectl get cronjobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cronjob\t" $0}'
+            kubectl get configmaps --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cm\t" $0}'
+            kubectl get secrets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "secret\t" $0}'
+            kubectl get statefulsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "sts\t" $0}'
+            kubectl get daemonsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "ds\t" $0}'
+            kubectl get replicasets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "rs\t" $0}'
+            kubectl get pvc --no-headers --force-colors "$@" 2>/dev/null | awk '{print "pvc\t" $0}'
+            kubectl get ingress --no-headers --force-colors "$@" 2>/dev/null | awk '{print "ing\t" $0}'
+            kubectl get nodes --no-headers --force-colors 2>/dev/null | awk '{print "node\t" $0}'
+        } | fzf --height=90% --ansi --reverse --prompt="Select resource to describe: " \
+              --header="TYPE      NAME                                      STATUS" \
+              --preview-window=hidden
+    )
+
+    if [[ -n "$selection" ]]; then
+        type=$(echo "$selection" | awk '{print $1}')
+        name=$(echo "$selection" | awk '{print $2}')
+        kubectl describe "$type" "$name" "$@" | less -R +G
     fi
 }
 
