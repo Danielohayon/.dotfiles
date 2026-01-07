@@ -24,6 +24,7 @@ ksvc	Describe a service
 kdeploy	Describe a deployment
 kjob	Describe a job
 knode	Describe a node
+kprovreq	Describe a provreq
 kevents	Get events for a pod
 kns	Switch namespace
 kctx	Switch context (cluster)
@@ -54,8 +55,11 @@ kall	Overview (pods + svc + deploy)
 kdesca	Describe any resource (all types in one view)
 kdel	Delete resources (multi-select, by type)
 kdela	Delete from ALL types in one view (multi-select)
+kgetcontext	Show current context/cluster
+kcontext	Switch GKE context (all in one view)
+kcontexthistory	Show context switch history
+kpodsearch	Search pods across ALL clusters and switch
 gke	Switch GKE cluster (zone -> cluster)
-gkea	Switch GKE cluster (all in one view)
 gar-browse	Browse Artifact Registry (repos -> images -> tags)
 gar-images	List images in a repository
 gar-tags	List tags for an image
@@ -95,6 +99,11 @@ _kfzf_job() {
 # Helper: select a node with full info displayed
 _kfzf_node() {
     kubectl get nodes --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select node: " | awk '{print $1}'
+}
+
+# Helper: select a provreq with full info displayed
+_kfzf_provreq() {
+    kubectl get provreq --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select provreq: " | awk '{print $1}'
 }
 
 # Describe a pod interactively
@@ -180,6 +189,15 @@ knode() {
     fi
 }
 
+# Describe a provreq interactively
+kprovreq() {
+    local provreq
+    provreq=$(_kfzf_provreq "$@")
+    if [[ -n "$provreq" ]]; then
+        kubectl describe provreq "$provreq" "$@" | less -R +G
+    fi
+}
+
 # Get events for a pod interactively
 kevents() {
     local pod
@@ -207,6 +225,7 @@ kctx() {
     [[ "$ctx" == "*" ]] && ctx=$(kubectl config get-contexts | fzf --height=90% --reverse --header-lines=1 --prompt="Select context: " | awk '{print $2}')
     if [[ -n "$ctx" && "$ctx" != "*" ]]; then
         kubectl config use-context "$ctx"
+        _klog_context "$ctx"
     fi
 }
 
@@ -398,9 +417,9 @@ kscale() {
 # Get YAML of any resource (for backup/editing)
 kyaml() {
     local resource item
-    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob" | fzf --height=90% --reverse --prompt="Select resource type: ")
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nprovreq" | fzf --height=90% --reverse --prompt="Select resource type: ")
     if [[ -n "$resource" ]]; then
-        item=$(kubectl get "$resource" "$@" | fzf --height=90% --reverse --header-lines=1 --prompt="Select $resource: " | awk '{print $1}')
+        item=$(kubectl get "$resource" --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select $resource: " | awk '{print $1}')
         if [[ -n "$item" ]]; then
             kubectl get "$resource" "$item" -o yaml "$@" | less -R
         fi
@@ -459,7 +478,7 @@ knodepods() {
 
 # Watch pods (auto-refresh)
 kwatch() {
-    watch -n 2 "kubectl get pods $*"
+    watch --color -n 2 "kubecolor get pods --force-colors $*"
 }
 
 # Find pods by image name
@@ -486,7 +505,7 @@ kall() {
 # Use Tab to mark multiple items, Enter to confirm
 kdel() {
     local resource items
-    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nreplicaset" | fzf --height=90% --reverse --prompt="Select resource type: ")
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nreplicaset\nprovreq" | fzf --height=90% --reverse --prompt="Select resource type: ")
     if [[ -n "$resource" ]]; then
         echo "Use Tab to select multiple, Enter to confirm deletion"
         items=$(kubectl get "$resource" --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --multi --prompt="Select $resource(s) to DELETE: " | awk '{print $1}')
@@ -526,6 +545,7 @@ kdesca() {
             kubectl get pvc --no-headers --force-colors "$@" 2>/dev/null | awk '{print "pvc\t" $0}'
             kubectl get ingress --no-headers --force-colors "$@" 2>/dev/null | awk '{print "ing\t" $0}'
             kubectl get nodes --no-headers --force-colors 2>/dev/null | awk '{print "node\t" $0}'
+            kubectl get provreq --no-headers --force-colors "$@" 2>/dev/null | awk '{print "provreq\t" $0}'
         } | fzf --height=90% --ansi --reverse --prompt="Select resource to describe: " \
               --header="TYPE      NAME                                      STATUS" \
               --preview-window=hidden
@@ -560,6 +580,7 @@ kdela() {
             kubectl get replicasets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "rs\t" $0}'
             kubectl get pvc --no-headers --force-colors "$@" 2>/dev/null | awk '{print "pvc\t" $0}'
             kubectl get ingress --no-headers --force-colors "$@" 2>/dev/null | awk '{print "ing\t" $0}'
+            kubectl get provreq --no-headers --force-colors "$@" 2>/dev/null | awk '{print "provreq\t" $0}'
         } | fzf --height=90% --ansi --reverse --multi --prompt="Select resource(s) to DELETE (Tab=select): " \
               --header="TYPE      NAME                                      STATUS" \
               --preview-window=hidden
@@ -613,10 +634,82 @@ gke() {
 
     echo "Switching to cluster: $cluster (zone: $zone)"
     gcloud container clusters get-credentials "$cluster" --zone "$zone" --project "$project"
+    _klog_context "gke_${project}_${zone}_${cluster}"
 }
 
-# Switch GKE cluster - all clusters in one view
-gkea() {
+# Context history file
+KUBE_CONTEXT_HISTORY="${HOME}/.kube/context_history"
+
+# Log context switch to history
+_klog_context() {
+    local ctx="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "$timestamp  $ctx" >> "$KUBE_CONTEXT_HISTORY"
+}
+
+# Search pods across all clusters and switch to selected cluster
+kpodsearch() {
+    echo "Fetching pods from all clusters (this may take a moment)..."
+
+    local tmpfile=$(mktemp)
+
+    kubectl config get-contexts -o name 2>/dev/null | while IFS= read -r ctx; do
+        [[ -z "$ctx" ]] && continue
+        echo "── $ctx ──" >> "$tmpfile"
+        # Get pods from ALL namespaces in this context
+        local pods=$(kubectl get pods -A --context="$ctx" --no-headers --force-colors 2>/dev/null)
+        if [[ -n "$pods" ]]; then
+            echo "$pods" | while IFS= read -r line; do
+                echo "   $ctx │ $line" >> "$tmpfile"
+            done
+        else
+            echo "   (no pods)" >> "$tmpfile"
+        fi
+    done
+
+    # Use fzf to select
+    local selection=$(cat "$tmpfile" | fzf --height=90% --ansi --reverse \
+        --header="Select a pod to switch to its cluster (ESC to cancel)" \
+        --prompt="Search pods: ")
+
+    rm -f "$tmpfile"
+
+    if [[ -n "$selection" ]]; then
+        local ctx=""
+        if [[ "$selection" == ──* ]]; then
+            # Selected a cluster header line
+            ctx=$(echo "$selection" | sed 's/^── //;s/ ──$//')
+        elif [[ "$selection" == *│* ]]; then
+            # Selected a pod line - extract context before │
+            ctx=$(echo "$selection" | awk -F'│' '{print $1}' | xargs)
+        fi
+
+        if [[ -n "$ctx" && "$ctx" != "(no pods)" ]]; then
+            echo "Switching to context: $ctx"
+            kubectl config use-context "$ctx"
+            _klog_context "$ctx"
+        fi
+    fi
+}
+
+# Show context switch history (oldest at top, most recent at bottom)
+kcontexthistory() {
+    if [[ -f "$KUBE_CONTEXT_HISTORY" ]]; then
+        tail -${1:-20} "$KUBE_CONTEXT_HISTORY"
+    else
+        echo "No context history found"
+    fi
+}
+
+# Show current context/cluster
+kgetcontext() {
+    echo "Context: $(kubectl config current-context)"
+    echo "Cluster: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')"
+    echo "Server:  $(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+}
+
+# Switch GKE context - all clusters in one view
+kcontext() {
     local project selection cluster zone
 
     # Get current project
@@ -633,6 +726,7 @@ gkea() {
 
     echo "Switching to cluster: $cluster (zone: $zone)"
     gcloud container clusters get-credentials "$cluster" --zone "$zone" --project "$project"
+    _klog_context "gke_${project}_${zone}_${cluster}"
 }
 
 # ============================================
