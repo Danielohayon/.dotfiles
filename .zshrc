@@ -1,4 +1,7 @@
 
+# Dotfiles location
+export DOTFILES="$HOME/Documents/Projects/.dotfiles"
+
 # Homebrew setup (Apple Silicon)
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
@@ -82,15 +85,31 @@ alias ge='chatgpt'
 alias gt='OPENAI_OMIT_HISTORY=True chatgpt'
 
 # ============================================
+# Enable completion (must be before kubectl completion)
+# ============================================
+autoload -Uz compinit && compinit
+
+# ============================================
 # Kubectl shortcuts
 # ============================================
-alias k=kubectl
+# Use kubecolor for colorized output (brew install kubecolor)
+if command -v kubecolor &> /dev/null; then
+    alias kubectl=kubecolor
+    alias k=kubecolor
+    # Make kubecolor use kubectl completions
+    compdef kubecolor=kubectl
+else
+    alias k=kubectl
+fi
 
 # kubectl auto completion
 if command -v kubectl &> /dev/null; then
     source <(kubectl completion zsh)
     compdef k=kubectl
 fi
+
+# kubectl fzf aliases
+[ -f "$DOTFILES/.kubectl_aliases" ] && source "$DOTFILES/.kubectl_aliases"
 
 # ============================================
 # fzf initialization
@@ -147,8 +166,7 @@ setopt NO_BEEP
 # cd without typing cd
 setopt AUTO_CD
 
-# Enable completion
-autoload -Uz compinit && compinit
+# Completion styling
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case insensitive completion
 
