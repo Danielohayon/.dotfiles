@@ -43,6 +43,7 @@ return {
     -- Configure LSP servers using vim.lsp.config (Neovim 0.11+)
     vim.lsp.config("pyright", {
       capabilities = capabilities,
+      cmd = { "uv", "run", "pyright-langserver", "--stdio" },
     })
 
     vim.lsp.config("bashls", {
