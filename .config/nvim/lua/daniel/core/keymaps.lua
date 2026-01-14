@@ -158,3 +158,11 @@ vim.keymap.set('v', 'mC', function()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'x', false)
 end, { noremap = true, silent = true, desc = "Copy absolute file:lines reference to clipboard" })
 
+-- Copy file path to clipboard and show in popup (normal mode)
+vim.keymap.set('n', 'mp', function()
+    local filepath = vim.fn.expand('%:p')  -- absolute path
+    vim.fn.setreg('+', filepath)
+    vim.fn.system('tmux load-buffer -', filepath)
+    vim.notify('Copied: ' .. filepath, vim.log.levels.INFO)
+end, { noremap = true, silent = true, desc = "Copy file path to clipboard" })
+
