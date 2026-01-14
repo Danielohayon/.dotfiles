@@ -647,25 +647,42 @@ _klog_context() {
     echo "$timestamp  $ctx" >> "$KUBE_CONTEXT_HISTORY"
 }
 
-# Search pods across all clusters and switch to selected cluster
+# Search pods across all clusters and switch to selected cluster (parallel fetching)
 kpodsearch() {
-    echo "Fetching pods from all clusters (this may take a moment)..."
+    echo "Fetching pods from all clusters in parallel..."
 
-    local tmpfile=$(mktemp)
+    local tmpdir=$(mktemp -d)
 
-    kubectl config get-contexts -o name 2>/dev/null | while IFS= read -r ctx; do
+    # Read contexts into array to avoid subshell issues
+    local contexts=("${(@f)$(kubectl config get-contexts -o name 2>/dev/null)}")
+
+    # Launch all kubectl commands in parallel
+    for ctx in "${contexts[@]}"; do
         [[ -z "$ctx" ]] && continue
-        echo "── $ctx ──" >> "$tmpfile"
-        # Get pods from ALL namespaces in this context
-        local pods=$(kubectl get pods -A --context="$ctx" --no-headers --force-colors 2>/dev/null)
-        if [[ -n "$pods" ]]; then
-            echo "$pods" | while IFS= read -r line; do
-                echo "   $ctx │ $line" >> "$tmpfile"
-            done
-        else
-            echo "   (no pods)" >> "$tmpfile"
-        fi
+        {
+            local outfile="$tmpdir/${ctx//\//_}"
+            echo "── $ctx ──" > "$outfile"
+            # Get pods, filter out system namespaces
+            local pods=$(command kubectl get pods -A --context="$ctx" --no-headers 2>/dev/null | grep -v -E '^(kube-system|kube-public|kube-node-lease|gke-managed-system|gke-managed-cim|gmp-system|gmp-public|external-secrets|istio-system|cert-manager) ')
+            if [[ -n "$pods" ]]; then
+                echo "$pods" | while IFS= read -r line; do
+                    echo "   $ctx │ $line" >> "$outfile"
+                done
+            else
+                echo "   (no pods)" >> "$outfile"
+            fi
+        } &
     done
+
+    # Wait for all background jobs to complete
+    wait 2>/dev/null
+
+    # Combine all results
+    local tmpfile=$(mktemp)
+    for f in "$tmpdir"/*; do
+        [[ -f "$f" ]] && cat "$f" >> "$tmpfile"
+    done
+    rm -rf "$tmpdir"
 
     # Use fzf to select
     local selection=$(cat "$tmpfile" | fzf --height=90% --ansi --reverse \
