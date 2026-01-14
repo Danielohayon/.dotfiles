@@ -75,6 +75,12 @@ return {
 			},
 			git = {
 				ignore = false,
+				timeout = 5000, -- increase timeout for large repos (default 400ms)
+			},
+			filesystem_watchers = {
+				enable = true,
+				debounce_delay = 50,
+				ignore_dirs = { "node_modules", ".git", "venv", ".venv" },
 			},
 		})
 
@@ -84,7 +90,7 @@ return {
 		keymap.set("n", "<leader>p", "<cmd>NvimTreeFocus<CR>", { desc = "Focus file explorer" })
 		-- keymap.set("n", "<leader>ef", "<cmd>NvimTreeFindFileToggle<CR>", { desc = "Toggle file explorer on current file" }) -- toggle file explorer on current file
 		-- keymap.set("n", "<leader>ec", "<cmd>NvimTreeCollapse<CR>", { desc = "Collapse file explorer" }) -- collapse file explorer
-		-- keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" }) -- refresh file explorer
+		keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" }) -- refresh file explorer
 		keymap.set("n", "t", api.node.open.tab, { desc = "Open in new tab" }) -- refresh file explorer
 
 	end,
