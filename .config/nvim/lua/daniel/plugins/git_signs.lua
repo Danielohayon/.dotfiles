@@ -41,11 +41,11 @@ return {
 				map('n', '<leader>gb', function() gs.blame_line{full=true} end, { desc = "Blame Line" })
 				map('n', '<leader>gtb', gs.toggle_current_line_blame, {desc = "Toggle Current Line Blame" })
 				-- Diff with easy close - q returns to original buffer
-				map('n', '<leader>gd', function()
+				local function diff_with_close(base)
 					local original_win = vim.api.nvim_get_current_win()
 					local original_buf = vim.api.nvim_get_current_buf()
 					local wins_before = vim.api.nvim_list_wins()
-					gs.diffthis()
+					gs.diffthis(base)
 
 					vim.schedule(function()
 						-- Find the new window (diff window)
@@ -83,15 +83,54 @@ return {
 							vim.keymap.set('n', 'q', close_diff, { buffer = diff_buf, desc = "Close diff" })
 						end
 					end)
-				end, {desc = "Diff File" })
-				map('n', '<leader>gD', function() gs.diffthis('~') end, {desc = "Diff File ~" })
+				end
+
+				map('n', '<leader>gd', function() diff_with_close() end, {desc = "Diff File" })
+				map('n', '<leader>gD', function() diff_with_close('~') end, {desc = "Diff File vs parent" })
+				map('n', '<leader>gm', function() diff_with_close('main') end, {desc = "Diff File vs main" })
 				map('n', '<leader>gtd', gs.toggle_deleted, { desc = "Toggle Deleted" })
 
-				-- Telescope Functions 
+				-- Toggle gitsigns base between index and merge-base with main
+				local merge_base_active = false
+				local function toggle_merge_base()
+					if merge_base_active then
+						gs.reset_base(true)
+						merge_base_active = false
+						vim.notify("Gitsigns: Showing diffs against index", vim.log.levels.INFO)
+					else
+						local merge_base = vim.fn.system("git merge-base main HEAD"):gsub('\n', '')
+						if vim.v.shell_error ~= 0 then
+							vim.notify("Failed to get merge-base with main", vim.log.levels.ERROR)
+							return
+						end
+						gs.change_base(merge_base, true)
+						merge_base_active = true
+						vim.notify("Gitsigns: Showing diffs since branch from main", vim.log.levels.INFO)
+					end
+				end
+				map('n', '<leader>gB', toggle_merge_base, { desc = "Toggle merge-base diff" })
 
-				map('n', '<leader>gc', "<cmd>Telescope git_bcommits<cr>", { desc = "Git Commits" })
-				map('n', '<leader>gs', "<cmd>Telescope git_status<cr>", { desc = "Git Status" })
+				-- Select a commit from Telescope to use as gitsigns base
+				local function select_base_commit()
+					require('telescope.builtin').git_commits({
+						attach_mappings = function(prompt_bufnr, map_fn)
+							local actions = require('telescope.actions')
+							local action_state = require('telescope.actions.state')
 
+							actions.select_default:replace(function()
+								local selection = action_state.get_selected_entry()
+								actions.close(prompt_bufnr)
+								if selection then
+									local commit_hash = selection.value
+									gs.change_base(commit_hash, true)
+									vim.notify("Gitsigns: Base set to " .. commit_hash:sub(1, 7), vim.log.levels.INFO)
+								end
+							end)
+							return true
+						end,
+					})
+				end
+				map('n', '<leader>g#', select_base_commit, { desc = "Select commit as gitsigns base" })
 
 				-- Add Lazygit keymapping 
 				local Terminal  = require('toggleterm.terminal').Terminal
