@@ -96,6 +96,7 @@ return {
 					if merge_base_active then
 						gs.reset_base(true)
 						merge_base_active = false
+						vim.g.gitsigns_base_commit = nil
 						vim.notify("Gitsigns: Showing diffs against index", vim.log.levels.INFO)
 					else
 						local merge_base = vim.fn.system("git merge-base main HEAD"):gsub('\n', '')
@@ -105,6 +106,7 @@ return {
 						end
 						gs.change_base(merge_base, true)
 						merge_base_active = true
+						vim.g.gitsigns_base_commit = merge_base
 						vim.notify("Gitsigns: Showing diffs since branch from main", vim.log.levels.INFO)
 					end
 				end
@@ -122,7 +124,8 @@ return {
 								actions.close(prompt_bufnr)
 								if selection then
 									local commit_hash = selection.value
-									gs.change_base(commit_hash, true)
+									require('gitsigns').change_base(commit_hash, true)
+									vim.g.gitsigns_base_commit = commit_hash
 									vim.notify("Gitsigns: Base set to " .. commit_hash:sub(1, 7), vim.log.levels.INFO)
 								end
 							end)
@@ -131,6 +134,51 @@ return {
 					})
 				end
 				map('n', '<leader>g#', select_base_commit, { desc = "Select commit as gitsigns base" })
+
+				-- Show changed files against the selected base commit
+				local function show_changed_files()
+					local base = vim.g.gitsigns_base_commit
+					if not base then
+						vim.notify("No base commit selected. Use <leader>g# or <leader>gB first.", vim.log.levels.WARN)
+						return
+					end
+
+					local pickers = require('telescope.pickers')
+					local finders = require('telescope.finders')
+					local conf = require('telescope.config').values
+					local actions = require('telescope.actions')
+					local action_state = require('telescope.actions.state')
+					local previewers = require('telescope.previewers')
+
+					-- Get list of changed files
+					local files = vim.fn.systemlist("git diff --name-only " .. base .. " HEAD")
+					if vim.v.shell_error ~= 0 or #files == 0 then
+						vim.notify("No changed files against " .. base:sub(1, 7), vim.log.levels.INFO)
+						return
+					end
+
+					pickers.new({}, {
+						prompt_title = "Changed Files (vs " .. base:sub(1, 7) .. ")",
+						finder = finders.new_table({ results = files }),
+						sorter = conf.generic_sorter({}),
+						previewer = previewers.new_termopen_previewer({
+							get_command = function(entry)
+								return { "git", "diff", base, "HEAD", "--", entry.value }
+							end,
+						}),
+						attach_mappings = function(prompt_bufnr, map_fn)
+							actions.select_default:replace(function()
+								local selection = action_state.get_selected_entry()
+								actions.close(prompt_bufnr)
+								if selection then
+									vim.cmd("edit " .. selection.value)
+								end
+							end)
+							return true
+						end,
+					}):find()
+				end
+				map('n', '<leader>gS', show_changed_files, { desc = "Show changed files vs base" })
 
 				-- Add Lazygit keymapping 
 				local Terminal  = require('toggleterm.terminal').Terminal
