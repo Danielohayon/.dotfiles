@@ -28,6 +28,7 @@ return {
 					"cpp",
 					"c",
 					"diff",
+					"htmldjango",
 					"jsdoc",
 					"json",
 					"jsonc",
@@ -67,6 +68,7 @@ return {
 			})
 			vim.cmd("au BufNewFile,BufRead *.cu set ft=cpp")
 			vim.cmd("au BufNewFile,BufRead *.cuh set ft=cpp")
+			vim.cmd("au BufNewFile,BufRead *.jinja,*.jinja2,*.j2 set ft=htmldjango")
 		end,
 	},
 }
