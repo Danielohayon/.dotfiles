@@ -59,6 +59,7 @@ kgetcontext	Show current context/cluster
 kcontext	Switch GKE context (all in one view)
 kcontexthistory	Show context switch history
 kpodsearch	Search pods across ALL clusters and switch
+kfindpod	Find pods by name across ALL contexts
 gke	Switch GKE cluster (zone -> cluster)
 gar-browse	Browse Artifact Registry (repos -> images -> tags)
 gar-images	List images in a repository
@@ -537,6 +538,7 @@ kdesca() {
             kubectl get services --no-headers --force-colors "$@" 2>/dev/null | awk '{print "svc\t" $0}'
             kubectl get jobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "job\t" $0}'
             kubectl get cronjobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cronjob\t" $0}'
+            kubectl get jobsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "jobset\t" $0}'
             kubectl get configmaps --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cm\t" $0}'
             kubectl get secrets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "secret\t" $0}'
             kubectl get statefulsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "sts\t" $0}'
@@ -573,6 +575,7 @@ kdela() {
             kubectl get services --no-headers --force-colors "$@" 2>/dev/null | awk '{print "svc\t" $0}'
             kubectl get jobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "job\t" $0}'
             kubectl get cronjobs --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cronjob\t" $0}'
+            kubectl get jobsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "jobset\t" $0}'
             kubectl get configmaps --no-headers --force-colors "$@" 2>/dev/null | awk '{print "cm\t" $0}'
             kubectl get secrets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "secret\t" $0}'
             kubectl get statefulsets --no-headers --force-colors "$@" 2>/dev/null | awk '{print "sts\t" $0}'
@@ -706,6 +709,50 @@ kpodsearch() {
             kubectl config use-context "$ctx"
             _klog_context "$ctx"
         fi
+    fi
+}
+
+# Find pods by name across all contexts (parallel search)
+# Usage: kfindpod <search-string>
+kfindpod() {
+    local search="$1"
+    if [[ -z "$search" ]]; then
+        echo "Usage: kfindpod <search-string>"
+        echo "Example: kfindpod test"
+        return 1
+    fi
+
+    echo "Searching for pods containing '$search' across all contexts..."
+
+    local tmpdir=$(mktemp -d)
+    local contexts=("${(@f)$(kubectl config get-contexts -o name 2>/dev/null)}")
+
+    # Launch all kubectl commands in parallel (in subshell to suppress job control messages)
+    (
+        for ctx in "${contexts[@]}"; do
+            [[ -z "$ctx" ]] && continue
+            (
+                pods=$(command kubectl get pods -A --context="$ctx" --no-headers 2>/dev/null | grep -i "$search")
+                if [[ -n "$pods" ]]; then
+                    echo "$pods" | while IFS= read -r line; do
+                        echo "$ctx │ $line"
+                    done > "$tmpdir/${ctx//\//_}"
+                fi
+            ) &
+        done
+        wait
+    )
+
+    # Combine and display results
+    local found=0
+    for f in "$tmpdir"/*(.N); do
+        cat "$f"
+        found=1
+    done
+    rm -rf "$tmpdir"
+
+    if [[ $found -eq 0 ]]; then
+        echo "No pods found containing '$search'"
     fi
 }
 
