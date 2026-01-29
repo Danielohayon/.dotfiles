@@ -7,7 +7,9 @@ return {
   end,
   config = function()
     local wk = require("which-key")
-    wk.setup({})
+    wk.setup({
+      delay = 0,
+    })
 
     -- Register group names for leader key prefixes
     wk.add({
