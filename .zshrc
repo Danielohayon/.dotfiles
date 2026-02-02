@@ -73,8 +73,8 @@ alias tree='eza -T --icons --group-directories-first'
 alias v=nvim
 
 # Claude Code
-alias c='claude'
-alias cr='claude --resume'
+alias c='claude --allow-dangerously-skip-permissions'
+alias cr='claude --resume --allow-dangerously-skip-permissions'
 
 # Assistant init
 alias chat='gpt --model claude-3-opus-20240229 --no_price'
@@ -115,6 +115,17 @@ fi
 # fzf initialization
 # ============================================
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# ============================================
+# Google Cloud SDK / gsutil completion
+# ============================================
+# Homebrew install location
+if [ -f "/opt/homebrew/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc" ]; then
+    source "/opt/homebrew/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
+# Standard install location
+elif [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then
+    source "$HOME/google-cloud-sdk/completion.zsh.inc"
+fi
 
 # ============================================
 # Environment variables
