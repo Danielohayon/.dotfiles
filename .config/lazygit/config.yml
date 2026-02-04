@@ -1,0 +1,16 @@
+# Lazygit configuration
+# https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+
+gui:
+  # Show file icons (requires nerd font)
+  showIcons: true
+  # Nerd Fonts version: "2" or "3" (v3 uses different codepoints)
+  nerdFontsVersion: "3"
+  # Mouse support
+  mouseEvents: true
+git:
+  pagers:
+    - # Use delta for beautiful diffs with syntax highlighting
+      # https://github.com/jesseduffield/lazygit/blob/master/docs/Custom_Pagers.md
+      colorArg: always
+      pager: delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
