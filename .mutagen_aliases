@@ -1,0 +1,155 @@
+# Mutagen FZF Shortcuts
+# Interactive mutagen commands using fzf
+
+# Main menu - list all mutagen shortcuts
+mu() {
+    local cmd
+    cmd=$(cat <<'EOF' | fzf --height=90% --reverse --prompt="mutagen shortcut: " --with-nth=1.. --delimiter='\t'
+mlist	List all sync sessions
+mdel	Delete sync sessions (multi-select)
+mstatus	Show detailed status of a sync
+mpause	Pause a sync session
+mresume	Resume a paused sync session
+mflush	Flush a sync session
+mreset	Reset a sync session
+mmonitor	Monitor sync sessions (live)
+EOF
+    )
+    cmd=$(echo "$cmd" | awk -F'\t' '{print $1}')
+    if [[ -n "$cmd" ]]; then
+        eval "$cmd"
+    fi
+}
+
+# Helper: format sync list for fzf display
+# Output format: FULL_ID<tab>SHORT_ID STATUS SOURCE → DEST
+# fzf shows only field 2+ (after first tab), but we extract field 1 for commands
+_mfzf_sync() {
+    mutagen sync list 2>/dev/null | awk '
+        /^Identifier:/ {
+            id=$2
+            short_id=substr(id,1,15)
+            section=""
+        }
+        /^Alpha:/ { section="alpha" }
+        /^Beta:/ { section="beta" }
+        /^\tURL:/ {
+            url=$2
+            if (section=="alpha") alpha=url
+            if (section=="beta") beta=url
+        }
+        /^Status:/ {
+            sub(/^Status:[[:space:]]*/, "")
+            status=$0
+            gsub(/Watching for changes/, "Watching", status)
+            gsub(/Halted due to.*/, "Halted", status)
+        }
+        /^--------/ {
+            if (id && alpha) {
+                # Full ID in field 1 (hidden), display info in field 2+
+                printf "%s\t%-15s %-12s %s → %s\n", id, short_id, status, alpha, beta
+            }
+            id=""; alpha=""; beta=""; status=""; section=""
+        }
+    ' | fzf --height=90% --reverse --prompt="$1" ${2:+--multi} \
+          --with-nth=2.. --delimiter='\t' \
+          --header="ID              STATUS       SOURCE → DESTINATION"
+}
+
+# List all sync sessions
+mlist() {
+    mutagen sync list
+}
+
+# Delete sync sessions interactively (multi-select with Tab)
+mdel() {
+    local selections
+    echo "Use Tab to select multiple, Enter to confirm"
+    selections=$(_mfzf_sync "Select sync(s) to DELETE: " "--multi")
+
+    if [[ -n "$selections" ]]; then
+        echo -e "\nWill terminate the following sync session(s):"
+        echo "$selections" | while read -r line; do
+            # Show the display part (after tab)
+            echo "  $(echo "$line" | cut -f2-)"
+        done
+
+        echo -n -e "\nConfirm? (y/N): "
+        read confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            echo "$selections" | while read -r line; do
+                # Extract full ID (before tab)
+                local id=$(echo "$line" | cut -f1)
+                [[ -n "$id" ]] && echo "Terminating ${id:0:15}..." && mutagen sync terminate "$id"
+            done
+            echo "Done."
+        else
+            echo "Cancelled."
+        fi
+    fi
+}
+
+# Show detailed status of a sync session
+mstatus() {
+    local selection id
+    selection=$(_mfzf_sync "Select sync to inspect: ")
+    if [[ -n "$selection" ]]; then
+        id=$(echo "$selection" | cut -f1)
+        mutagen sync list --long "$id"
+    fi
+}
+
+# Pause a sync session
+mpause() {
+    local selection id
+    selection=$(_mfzf_sync "Select sync to PAUSE: ")
+    if [[ -n "$selection" ]]; then
+        id=$(echo "$selection" | cut -f1)
+        echo "Pausing ${id:0:15}..."
+        mutagen sync pause "$id"
+    fi
+}
+
+# Resume a paused sync session
+mresume() {
+    local selection id
+    selection=$(_mfzf_sync "Select sync to RESUME: ")
+    if [[ -n "$selection" ]]; then
+        id=$(echo "$selection" | cut -f1)
+        echo "Resuming ${id:0:15}..."
+        mutagen sync resume "$id"
+    fi
+}
+
+# Flush a sync session (force immediate sync)
+mflush() {
+    local selection id
+    selection=$(_mfzf_sync "Select sync to FLUSH: ")
+    if [[ -n "$selection" ]]; then
+        id=$(echo "$selection" | cut -f1)
+        echo "Flushing ${id:0:15}..."
+        mutagen sync flush "$id"
+    fi
+}
+
+# Reset a sync session
+mreset() {
+    local selection id
+    selection=$(_mfzf_sync "Select sync to RESET: ")
+    if [[ -n "$selection" ]]; then
+        id=$(echo "$selection" | cut -f1)
+        echo -n "This will reset sync state. Continue? (y/N): "
+        read confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            echo "Resetting ${id:0:15}..."
+            mutagen sync reset "$id"
+        else
+            echo "Cancelled."
+        fi
+    fi
+}
+
+# Monitor sync sessions (live updates)
+mmonitor() {
+    mutagen sync monitor
+}
