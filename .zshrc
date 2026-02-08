@@ -84,6 +84,9 @@ alias g=$'chatgpt \'(Remember you are and expert software engineer and you provi
 alias ge='chatgpt'
 alias gt='OPENAI_OMIT_HISTORY=True chatgpt'
 
+# Git aliases
+[ -f "$DOTFILES/.git_aliases" ] && source "$DOTFILES/.git_aliases"
+
 # ============================================
 # Enable completion (must be before kubectl completion)
 # ============================================
@@ -111,6 +114,9 @@ fi
 # kubectl fzf aliases
 [ -f "$DOTFILES/.kubectl_aliases" ] && source "$DOTFILES/.kubectl_aliases"
 
+# mutagen fzf aliases
+[ -f "$DOTFILES/.mutagen_aliases" ] && source "$DOTFILES/.mutagen_aliases"
+
 # ============================================
 # fzf initialization
 # ============================================
@@ -131,6 +137,9 @@ fi
 # Environment variables
 # ============================================
 export HF_HOME="/Users/danielohayon/.cache/huggingface"
+
+# Use ~/.config for apps that support XDG (lazygit, etc.)
+export XDG_CONFIG_HOME="$HOME/.config"
 
 # Attempt to fix yanking problem in tmux
 export DISPLAY=:0
