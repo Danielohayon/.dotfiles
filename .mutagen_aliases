@@ -12,12 +12,82 @@ mpause	Pause a sync session
 mresume	Resume a paused sync session
 mflush	Flush a sync session
 mreset	Reset a sync session
+madd	Create a new sync session (interactive)
 mmonitor	Monitor sync sessions (live)
 EOF
     )
     cmd=$(echo "$cmd" | awk -F'\t' '{print $1}')
     if [[ -n "$cmd" ]]; then
         eval "$cmd"
+    fi
+}
+
+# Helper: Get hosts from SSH config (excluding wildcards)
+_mfzf_ssh_hosts() {
+    grep -E "^Host " ~/.ssh/config 2>/dev/null \
+        | awk '{print $2}' \
+        | grep -v '[*?]' \
+        | fzf --height=90% --reverse --prompt="Select remote host: "
+}
+
+# Helper: Select a directory under home using fzf
+_mfzf_local_dir() {
+    local selected
+    selected=$(fd --type d --hidden --exclude .git --exclude node_modules \
+        --exclude .venv --exclude venv --exclude __pycache__ \
+        . ~ 2>/dev/null \
+        | fzf --height=90% --reverse --prompt="Select local folder: " \
+              --preview 'ls -la {}' --preview-window=right:40%)
+    echo "$selected"
+}
+
+# Create a new sync session interactively
+madd() {
+    local local_path host remote_path
+
+    # Step 1: Local path (fzf selection from home directory)
+    echo "Select local folder (or press Esc to use current directory)..."
+    local_path=$(_mfzf_local_dir)
+
+    # Default to current directory if cancelled/empty
+    if [[ -z "$local_path" ]]; then
+        local_path="$PWD"
+        echo "Using current directory: $local_path"
+    fi
+
+    # Step 2: Select host from SSH config
+    host=$(_mfzf_ssh_hosts)
+    [[ -z "$host" ]] && echo "Cancelled." && return 1
+
+    # Step 3: Remote path
+    echo -n "Remote path on $host: "
+    read remote_path
+    [[ -z "$remote_path" ]] && echo "Cancelled." && return 1
+
+    # Step 4: Confirm
+    echo ""
+    echo "Create sync:"
+    echo "  Local:  $local_path"
+    echo "  Remote: $host:$remote_path"
+    echo ""
+    echo -n "Proceed? (y/N): "
+    read confirm
+
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        mutagen sync create \
+            --ignore=".venv" --ignore="venv" --ignore="node_modules" \
+            --ignore="__pycache__" --ignore=".pytest_cache" --ignore=".mypy_cache" \
+            --ignore=".ruff_cache" --ignore="*.pyc" --ignore="*.pyo" \
+            --ignore="*.egg-info" --ignore=".eggs" --ignore="*.db-shm" \
+            --ignore="*.db-wal" --ignore="*.db-journal" --ignore=".git" \
+            --ignore=".DS_Store" --ignore="Thumbs.db" --ignore="*.swp" \
+            --ignore="*.swo" --ignore="*~" --ignore=".idea" --ignore="*.log" \
+            --ignore="dist" --ignore="build" --ignore="target" --ignore=".tox" \
+            --ignore=".nox" --ignore=".coverage" --ignore="htmlcov" \
+            --ignore=".cache" --ignore="*.so" --ignore="*.dylib" \
+            "$local_path" "$host:$remote_path"
+    else
+        echo "Cancelled."
     fi
 }
 
