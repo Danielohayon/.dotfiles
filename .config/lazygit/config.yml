@@ -9,9 +9,8 @@ gui:
   # Mouse support
   mouseEvents: true
 git:
+  # https://github.com/jesseduffield/lazygit/blob/master/docs/Custom_Pagers.md
+  # Press | to cycle between pagers
   pagers:
-    - # Use delta for beautiful diffs with syntax highlighting
-      # https://github.com/jesseduffield/lazygit/blob/master/docs/Custom_Pagers.md
-      colorArg: always
-      pager: delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
-      # pager: delta --dark --paging=never --line-numbers --side-by-side --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
+    - pager: delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
+    - externalDiffCommand: difft --color=always --display=inline --background dark
