@@ -149,7 +149,12 @@ mreset() {
     fi
 }
 
-# Monitor sync sessions (live updates)
+# Monitor a sync session (live updates)
 mmonitor() {
-    mutagen sync monitor
+    local selection id
+    selection=$(_mfzf_sync "Select sync to MONITOR: ")
+    if [[ -n "$selection" ]]; then
+        id=$(echo "$selection" | cut -f1)
+        mutagen sync monitor "$id"
+    fi
 }
