@@ -1,0 +1,76 @@
+# Git worktree helpers
+#
+#
+#
+#
+#   - gwl — List worktrees
+  # - gwr <path> — Remove a worktree
+  # - gwn <branch> [base] — Create worktree (new or existing branch), cd into it
+  # - gwo — Pick remote branch with fzf, create worktree, cd into it
+  # - gwj — Jump to any worktree with fzf
+
+
+
+alias gwl='git worktree list'
+alias gwr='git worktree remove'
+
+# Git worktree: create new branch + folder as sibling
+# Usage: gwn <branch-name> [base-branch]
+gwn() {
+    local branch="$1"
+    local base="${2:-main}"
+    if [[ -z "$branch" ]]; then
+        echo "Usage: gwn <branch-name> [base-branch]"
+        return 1
+    fi
+    local folder="${branch//\//-}"  # replace / with -
+    local target="../$folder"
+    git worktree prune
+    if git show-ref --verify --quiet "refs/heads/$branch"; then
+        # Branch exists, just add worktree
+        git worktree add "$target" "$branch" && cd "$target"
+    else
+        # Create new branch
+        git worktree add -b "$branch" "$target" "$base" && cd "$target"
+    fi
+}
+
+# Git worktree: checkout existing remote branch with fzf
+# Usage: gwo
+gwo() {
+    git fetch --all --prune
+    git worktree prune
+    local branch=$(git branch -r | grep -v HEAD | sed 's|origin/||' | tr -d ' ' | fzf --height 40% --prompt="Select branch: ")
+    if [[ -n "$branch" ]]; then
+        # Check if branch is already checked out in a worktree
+        local existing=$(git worktree list --porcelain | grep -A2 "^worktree " | awk '/^branch refs\/heads\/'"$branch"'$/{getline; print prev} {prev=$0}' | head -1)
+        if [[ -z "$existing" ]]; then
+            # Simpler fallback check
+            existing=$(git worktree list | grep "\[$branch\]" | awk '{print $1}')
+        fi
+        if [[ -n "$existing" ]]; then
+            echo "Branch '$branch' already checked out at: $existing"
+            cd "$existing"
+            return 0
+        fi
+
+        local folder="${branch//\//-}"  # replace / with -
+        local target="../$folder"
+        if git show-ref --verify --quiet "refs/heads/$branch"; then
+            # Local branch exists, just add worktree
+            git worktree add "$target" "$branch" && cd "$target"
+        else
+            # Create local branch tracking remote
+            git worktree add -b "$branch" "$target" "origin/$branch" && cd "$target"
+        fi
+    fi
+}
+
+# Git worktree: jump to a worktree with fzf
+# Usage: gwj
+gwj() {
+    local target=$(git worktree list | fzf --height 40% --prompt="Jump to worktree: " | awk '{print $1}')
+    if [[ -n "$target" ]]; then
+        cd "$target"
+    fi
+}
