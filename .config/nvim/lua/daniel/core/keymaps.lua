@@ -90,6 +90,11 @@ keymap.set("n", "<A-k>", ":m .-2<CR>==", { noremap = true, silent = true, desc =
 opts.desc = "Toggle Wrap"
 keymap.set("n", "<leader>lw", ":set invwrap<CR>", opts)
 
+-- Git (available globally without a buffer)
+keymap.set("n", "<leader>gs", "<cmd>Telescope git_status<cr>", { desc = "Git Status" })
+keymap.set("n", "<leader>gc", "<cmd>Telescope git_commits<cr>", { desc = "Git Commits (all)" })
+keymap.set("n", "<leader>gC", "<cmd>Telescope git_bcommits<cr>", { desc = "Git Commits (buffer)" })
+
 -- Diagnostic display config
 vim.diagnostic.config({
     virtual_text = false,
