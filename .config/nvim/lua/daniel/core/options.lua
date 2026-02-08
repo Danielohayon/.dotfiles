@@ -42,8 +42,9 @@ vim.opt.fillchars = {eob = " "}
 vim.cmd "autocmd User TelescopePreviewerLoaded setlocal number"
 vim.opt.signcolumn = "yes:2"
 
--- Folding with indent
-vim.opt.foldmethod = "indent"
+-- Folding with treesitter
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 vim.opt.foldlevel = 99  -- start with all folds open
 
 -- Smooth scrolling through wrapped lines
