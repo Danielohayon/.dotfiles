@@ -65,5 +65,28 @@ return {
     keymap.set("n", "<leader>fv", "<cmd>Telescope command_history<cr>", { desc = "Command History" })
     keymap.set("n", "<leader>fj", "<cmd>Telescope jumplist<cr>", { desc = "*Jump History*" })
     keymap.set("n", "<leader>fk", "<cmd>Telescope keymaps<cr>", { desc = "Keymaps" })
+    -- Compare current file with another file (diff)
+    keymap.set("n", "<leader>lc", function()
+      local current_file = vim.fn.expand('%:p')
+      if current_file == '' then
+        vim.notify('No file in current buffer', vim.log.levels.WARN)
+        return
+      end
+      require('telescope.builtin').find_files({
+        prompt_title = 'Select file to compare with',
+        attach_mappings = function(prompt_bufnr, map)
+          actions.select_default:replace(function()
+            local action_state = require('telescope.actions.state')
+            local selection = action_state.get_selected_entry()
+            actions.close(prompt_bufnr)
+            if selection then
+              vim.cmd('vert diffsplit ' .. vim.fn.fnameescape(selection.path))
+            end
+          end)
+          return true
+        end,
+      })
+    end, { desc = "Compare file with another (diff)" })
+
   end,
 }
