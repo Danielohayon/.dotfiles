@@ -81,6 +81,10 @@ return {
             actions.close(prompt_bufnr)
             if selection then
               vim.cmd('vert diffsplit ' .. vim.fn.fnameescape(selection.path))
+              vim.notify(
+                ']c/[c: next/prev change | do: obtain | dp: put | :diffoff! to exit',
+                vim.log.levels.INFO
+              )
             end
           end)
           return true
