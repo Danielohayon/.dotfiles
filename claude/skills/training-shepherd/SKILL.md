@@ -32,7 +32,11 @@ preparation | launch | monitoring | debugging
 
 ## Config
 - **Path:** <path to config file>
-- **Cluster Context:** <kubectl context>
+
+## Cluster (from GPU discovery - DO NOT CHANGE)
+- **Context:** <kubectl context from gcp-get-dws-gpus>
+- **GPU Type:** <e.g., H200, H100>
+- **Nodes:** <number of nodes>
 
 ## Job Info
 - **Job Name:** <job name once launched>
@@ -46,11 +50,13 @@ preparation | launch | monitoring | debugging
 <any important observations, errors seen, fixes attempted>
 
 ## Log
-- [timestamp] Created state file
-- [timestamp] Launched job
-- [timestamp] Detected failure: <reason>
-- [timestamp] Retry #N
+- [2026-02-18 14:30:00] Created state file
+- [2026-02-18 14:35:00] Launched job
+- [2026-02-18 15:10:00] Detected failure: <reason>
+- [2026-02-18 15:15:00] Retry #N
 ```
+
+**Use datetime format `YYYY-MM-DD HH:MM:SS` for all log entries.**
 
 **Update this file after every significant action** (launching, detecting failure, retrying). Append to the Log section.
 
@@ -127,9 +133,90 @@ For deep infrastructure questions, research in:
 1. **Read the goal** - Understand what training run is requested
 2. **Check knowledge base** - Read relevant knowledge-preservation files
 3. **Identify or create config** - Find existing config or create one in `configs/`
-4. **Render the manifest** - Use `uv run scripts/render_config.py <config>`
+4. **Find available GPU cluster** - See below
+5. **Render the manifest** - Use `uv run scripts/render_config.py <config>`
+
+#### Step 4: Find Available GPU Cluster (REQUIRED)
+
+**Before launching, you MUST discover which cluster has available GPUs.**
+
+Run this command from the corma-cli directory with a long timeout (this command queries all clusters and takes time):
+
+```bash
+cd /Users/danielohayon/Documents/Projects/Repos/corma-cli && uv run ccli gcp-get-dws-gpus --gpu <GPU_TYPE> --nodes <NUM_NODES> --setup-contexts
+```
+
+**Parameters:**
+- `--gpu`: GPU type needed (e.g., `H200`, `H100`, `B200`)
+- `--nodes`: Number of nodes required
+
+**Example:**
+```bash
+cd /Users/danielohayon/Documents/Projects/Repos/corma-cli && uv run ccli gcp-get-dws-gpus --gpu H200 --nodes 4 --setup-contexts
+```
+
+**Important:**
+- Use a **900 second timeout** for this command - it queries multiple clusters and waits for provisioning
+- The command will automatically stop when it finds available GPUs
+
+**Parsing the output:**
+
+The command outputs progress as it runs. Look for these key lines:
+
+1. **Context setup lines** (early in output):
+   ```
+   Context ready: gke_training-461216_europe-west1-b_europe-west1-b
+   ```
+
+2. **Success line** (when GPUs are found):
+   ```
+   SUCCESS: Cluster 'europe-west1-b' has provisioned request 'provreq-auto-h200-1-64dbc22c'!
+   ```
+
+3. **Final summary** (at the end):
+   ```
+   === Provisioning Complete ===
+   Successfully provisioned 1/1 requested
+   Cluster: europe-west1-b
+   ```
+
+**Extract the context name** by combining the cluster name with the context format:
+- Cluster name from output: `europe-west1-b`
+- Full context: `gke_training-461216_<zone>_<cluster-name>` (e.g., `gke_training-461216_europe-west1-b_europe-west1-b`)
+
+You can find the exact context string in the "Context ready:" lines earlier in the output.
+
+**Once you find the context:**
+1. **Print it to the user:** "Found available GPUs in context: `gke_training-461216_europe-west1-b_europe-west1-b`"
+2. **Store it in the state file** under `Cluster > Context`
+3. **Use this context for ALL subsequent kubectl commands**
+
+**Only run this discovery once** at the beginning of the task. After that, always use the stored context.
 
 ### Phase 2: Launch
+
+#### Job Naming Convention (REQUIRED)
+
+**All job names in the config MUST have the prefix `do-`** (e.g., `do-qwen3-grpo-h200`, `do-cybergym-v7-run1`).
+
+This prefix identifies jobs launched by this agent and allows us to find all shepherd-launched runs later.
+
+**Important:** The k8s-manifests repo automatically adds an `rl-` prefix when rendering. So:
+- Config file: `job_name: do-qwen3-grpo`
+- Actual job name in cluster: `rl-do-qwen3-grpo`
+
+Before launching, ensure the config's `job_name` field starts with `do-`. If it doesn't, modify the config to add the prefix.
+
+```yaml
+# CORRECT - in config file
+job_name: do-qwen3-grpo-experiment
+# Results in cluster job name: rl-do-qwen3-grpo-experiment
+
+# WRONG - missing prefix
+job_name: qwen3-grpo-experiment
+```
+
+#### Apply the Manifest
 
 1. **Apply the manifest**:
    ```bash
@@ -138,10 +225,11 @@ For deep infrastructure questions, research in:
 
    Or apply manually:
    ```bash
-   kubectl apply -f output/<path-to-manifest>.yaml
+   kubectl apply -f output/<path-to-manifest>.yaml --context <cluster-context>
    ```
 
-2. **Record the job name** for monitoring
+2. **Record the FULL job name** (with `rl-do-` prefix) in your state file for monitoring
+   - Example: if config has `job_name: do-experiment`, store `rl-do-experiment` in state file
 
 ### Phase 3: Monitoring Loop
 
@@ -152,29 +240,41 @@ Use a polling approach to monitor the training run. The key stages to verify:
 3. **Rollout Stage** - Model loaded, Ray cluster formed, initial setup done
 4. **Training Stage** - Actual training steps are progressing
 
+**IMPORTANT: Do NOT check too frequently.** Checking too often leads to misdiagnosis - you may see transient states (pods initializing, temporary errors) and incorrectly conclude the run has failed. Training runs take time to start up. Be patient.
+
 **Monitoring Commands:**
 
 ```bash
 # Check pod status
-sleep 30 && kubectl get pods -l job-name=<job-name> --context <context>
+kubectl get pods -l job-name=<job-name> --context <context>
 
 # Check for errors in logs
-sleep 60 && kubectl logs -l job-name=<job-name> --tail=100 --context <context>
+kubectl logs -l job-name=<job-name> --tail=100 --context <context>
 
 # Watch for training progress (look for step counts, loss values)
-sleep 120 && kubectl logs -l job-name=<job-name> --tail=200 --context <context> | grep -E "(step|loss|reward|throughput)"
+kubectl logs -l job-name=<job-name> --tail=200 --context <context> | grep -E "(step|loss|reward|throughput)"
 ```
 
-**Polling Schedule:**
-- Minutes 5-15: Check every 60-300 seconds for initialization
-- Minutes 15-30: Check every 2 minutes for rollout stage
-- After 30 minutes: Check every 5 minutes for training progress
+**Polling Schedule (use `sleep` before each check):**
+
+| Phase | Wait Time | What to Check |
+|-------|-----------|---------------|
+| After launch | `sleep 180` (3 min) | Are pods created? |
+| Pod scheduling | `sleep 180` (3 min) | Are pods Running? |
+| Initialization | `sleep 180` (3 min) | Init containers complete? |
+| Rollout stage | `sleep 300` (5 min) | Model loading, Ray cluster forming? |
+| Training stage | `sleep 300` (5 min) | Training steps appearing? |
+| Ongoing monitoring | `sleep 300` (5 min) | Still healthy? |
+
+**Total minimum time before concluding success: ~30-45 minutes**
+
+Do NOT declare failure just because pods aren't running after 2 minutes. Large model training takes significant time to initialize.
 
 **Success Criteria:**
 - Pods are Running (not Pending, CrashLoopBackOff, Error)
 - Rollout stage logs appear (model loading, Ray initialization)
 - Training step logs appear with loss values
-- At least 2 training steps complete without crash
+- At least 5-10 training steps complete without crash
 
 ### Phase 4: On Failure
 
@@ -388,6 +488,32 @@ You are **NOT** authorized to:
 - Delete or modify persistent volumes or storage classes
 - Alter node pools or autoscaling settings
 - Make any infrastructure-level changes
+- **Commit anything to git** - Do not run `git add`, `git commit`, or `git push`
+- **Delete ANY jobs or pods you did not launch** - See critical warning below
+
+---
+
+**CRITICAL: Only Delete Your Own Jobs/Pods**
+
+**NEVER delete any JobSet, Job, or Pod that you did not launch yourself.**
+
+Before deleting anything, verify ALL of these:
+1. The job name starts with `rl-do-` (the required prefix for shepherd-launched jobs in the cluster)
+2. The job name matches the one YOU launched (stored in your state file under `Job Info`)
+3. The jobset name matches YOUR jobset (stored in your state file)
+
+```bash
+# ONLY delete if the job name matches what's in YOUR state file AND starts with rl-do-
+kubectl delete jobset rl-do-<YOUR-jobset-name> --context <context>
+```
+
+**If a job doesn't start with `rl-do-`, it was NOT launched by this agent. NEVER delete it.**
+
+Other users may have training runs on the same cluster. Deleting someone else's job could destroy hours or days of their work. **This is absolutely unacceptable.**
+
+If you're unsure whether a job is yours, **DO NOT DELETE IT**. Ask the user first.
+
+---
 
 **If your diagnosis concludes that a cluster-level change is needed:**
 1. **STOP immediately**
