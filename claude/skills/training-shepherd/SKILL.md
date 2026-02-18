@@ -167,11 +167,14 @@ If the training run fails (pods crash, errors in logs, stuck pending):
 **CRITICAL: Always capture and output logs before deleting anything.**
 
 ```bash
+# Store logs in .claude folder with timestamp
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
 # Get full logs from failed pods
-kubectl logs -l job-name=<job-name> --context <context> > ./failed_<exp-name>_events.txt 
+kubectl logs -l job-name=<job-name> --context <context> > .claude/<task-slug>_logs_${TIMESTAMP}.txt
 
 # Get pod events
-kubectl describe pods -l job-name=<job-name> --context <context> > ./failed_<exp-name>_events.txt 
+kubectl describe pods -l job-name=<job-name> --context <context> > .claude/<task-slug>_events_${TIMESTAMP}.txt
 
 # Get pod status
 kubectl get pods -l job-name=<job-name> -o wide --context <context>
@@ -190,7 +193,8 @@ kubectl get pods -l job-name=<job-name> -o wide --context <context>
 <relevant log lines showing the error>
 
 ### Full Logs
-Saved to: /tmp/failed_run_logs.txt
+Saved to: .claude/<task-slug>_logs_<timestamp>.txt
+Events: .claude/<task-slug>_events_<timestamp>.txt
 ```
 
 #### Step 4.2: Diagnose with Subagents
