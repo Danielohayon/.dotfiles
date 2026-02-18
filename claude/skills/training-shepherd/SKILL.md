@@ -64,6 +64,24 @@ This is a long-running task. Context WILL be compacted. You MUST be ready to res
 
 ---
 
+## CRITICAL: Always Use Explicit Kubectl Context
+
+**The user may switch kubectl contexts during your monitoring session.** If you run kubectl commands without `--context`, you will query the wrong cluster and lose track of your experiment.
+
+**MANDATORY:** Every single kubectl command MUST include `--context <context>` explicitly.
+
+```bash
+# CORRECT - always specify context
+kubectl get pods -l job-name=my-job --context gke_project_region_cluster
+
+# WRONG - will use whatever context is currently active
+kubectl get pods -l job-name=my-job
+```
+
+**Store the context in your state file immediately** and read it from there for every kubectl command. The context is set when you launch the experiment and must never change for that experiment's lifecycle.
+
+---
+
 ## Input
 
 The user will provide a training goal, for example:
@@ -351,6 +369,7 @@ Throughout the process, keep the user informed:
 6. **Use sleep for polling** - Don't hammer the API, use appropriate wait intervals
 7. **ALWAYS maintain state file** - Update `.claude/shepherd_<task-slug>.md` after every action, append to the Log section
 8. **Reload skill on context compaction** - If context gets compacted, invoke `/training-shepherd`, list `.claude/shepherd_*.md`, and read your state file to resume
+9. **ALWAYS use --context flag** - Every kubectl command must explicitly include `--context <context>` from your state file. Never rely on the active context.
 
 ---
 
