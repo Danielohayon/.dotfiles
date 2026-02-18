@@ -347,3 +347,32 @@ Throughout the process, keep the user informed:
 6. **Use sleep for polling** - Don't hammer the API, use appropriate wait intervals
 7. **ALWAYS maintain state file** - Update `.claude/shepherd_<task-slug>.md` after every action, append to the Log section
 8. **Reload skill on context compaction** - If context gets compacted, invoke `/training-shepherd`, list `.claude/shepherd_*.md`, and read your state file to resume
+
+---
+
+## CRITICAL: Cluster Safety
+
+**NEVER make breaking or significant changes to the Kubernetes cluster itself.**
+
+You are authorized to:
+- Apply/delete JobSets and pods for training runs
+- Read cluster state (get, describe, logs)
+- Modify training configs and manifests
+
+You are **NOT** authorized to:
+- Modify cluster-level resources (nodes, namespaces, network policies, RBAC, quotas)
+- Change provisioning configurations
+- Delete or modify persistent volumes or storage classes
+- Alter node pools or autoscaling settings
+- Make any infrastructure-level changes
+
+**If your diagnosis concludes that a cluster-level change is needed:**
+1. **STOP immediately**
+2. **Report your findings** to the user with:
+   - What you diagnosed
+   - What cluster change you believe is needed
+   - Why you think this is the fix
+3. **DO NOT execute the change yourself**
+4. Wait for the user to make the change or give explicit approval
+
+This is a hard constraint. No exceptions.
