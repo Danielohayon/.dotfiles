@@ -13,6 +13,7 @@ setopt HIST_IGNORE_DUPS
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
 setopt INC_APPEND_HISTORY
+setopt EXTENDED_HISTORY
 
 # History timestamp format
 HIST_STAMPS='%d/%m %H:%M '
@@ -122,6 +123,22 @@ fi
 # ============================================
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+# Custom Ctrl+R with timestamps
+fzf-history-widget-timestamps() {
+  local selected
+  selected=$(fc -li 1 | fzf --tac --no-sort --query="$LBUFFER")
+  if [[ -n "$selected" ]]; then
+    # Extract command (strip number and timestamp)
+    local cmd=$(echo "$selected" | sed 's/^[ ]*[0-9]*[ ]*[^ ]* [^ ]* *//')
+    LBUFFER="$cmd"
+  fi
+  zle redisplay
+}
+zle -N fzf-history-widget-timestamps
+bindkey -M emacs '^R' fzf-history-widget-timestamps
+bindkey -M vicmd '^R' fzf-history-widget-timestamps
+bindkey -M viins '^R' fzf-history-widget-timestamps
+
 # ============================================
 # Google Cloud SDK / gsutil completion
 # ============================================
@@ -220,3 +237,7 @@ bindkey '^H' backward-delete-char   # Ctrl+H (alternate backspace)
 bindkey '^W' backward-kill-word     # Ctrl+W to delete word
 bindkey '^U' backward-kill-line     # Ctrl+U to delete to start of line
 bindkey '^?' backward-delete-char
+
+# The next line updates PATH for Nebius CLI.
+if [ -f '/Users/danielohayon/.nebius/path.zsh.inc' ]; then source '/Users/danielohayon/.nebius/path.zsh.inc'; fi
+if [ -f ~/.nebius/completion.zsh.inc ]; then source ~/.nebius/completion.zsh.inc; fi
