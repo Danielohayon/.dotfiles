@@ -14,6 +14,7 @@ ku() {
 kpod	Describe a pod
 klogs	View pod logs
 klogsf	Follow pod logs (live tail)
+klogsfc	Follow logs (pick context first, then pod)
 klogsp	Logs from previous crashed container
 klogst	Logs with timestamps
 klogsd	Tail logs from all pods in a deployment
@@ -49,15 +50,17 @@ kcp	Copy file from pod
 kpodip	Get pod IP
 kpodnode	Get node where pod runs
 knodepods	List pods on a node
-kwatch	Watch pods (auto-refresh)
+kwatch	Watch pods (--filter "str" to filter)
 kimage	Find pods by image name
 kall	Overview (pods + svc + deploy)
 kdesca	Describe any resource (all types in one view)
 kdel	Delete resources (multi-select, by type)
+kdelc	Delete resources (pick context first)
 kdela	Delete from ALL types in one view (multi-select)
 kgetcontext	Show current context/cluster
 kcontext	Switch GKE context (all in one view)
 kcontexthistory	Show context switch history
+khistory	Switch context from history (with details)
 kpodsearch	Search pods across ALL clusters and switch
 kfindpod	Find pods by name across ALL contexts
 gke	Switch GKE cluster (zone -> cluster)
@@ -107,6 +110,64 @@ _kfzf_provreq() {
     kubectl get provreq --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select provreq: " | awk '{print $1}'
 }
 
+# Helper: select a context with MRU (most recently used) sorting
+# Sorts contexts by history, logs selection to history, returns context name
+_kfzf_context_mru() {
+    local history_file="${KUBE_CONTEXT_HISTORY:-$HOME/.kube/context_history}"
+    local header all_contexts sorted_list recent_ctxs ctx
+
+    # Get header and all context lines
+    header=$(kubectl config get-contexts 2>/dev/null | head -1)
+    all_contexts=$(kubectl config get-contexts 2>/dev/null | tail -n +2)
+
+    [[ -z "$all_contexts" ]] && return
+
+    # Build sorted list based on history
+    if [[ -f "$history_file" ]]; then
+        # Get unique recent context names (most recent first)
+        # Using awk to reverse since it's portable (tail -r is macOS only, tac is Linux only)
+        recent_ctxs=$(awk '{a[NR]=$3} END {for(i=NR;i>=1;i--) print a[i]}' "$history_file" | awk '!seen[$0]++')
+
+        sorted_list=""
+        # Add contexts in MRU order first
+        while IFS= read -r recent_ctx; do
+            [[ -z "$recent_ctx" ]] && continue
+            # Match context line where name matches (accounting for * in first column)
+            local match=$(echo "$all_contexts" | awk -v ctx="$recent_ctx" '
+                ($1 == "*" && $2 == ctx) || ($1 != "*" && $1 == ctx) {print; exit}
+            ')
+            if [[ -n "$match" ]]; then
+                sorted_list+="$match"$'\n'
+            fi
+        done <<< "$recent_ctxs"
+
+        # Add remaining contexts not in history
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            local ctx_name=$(echo "$line" | awk '{print ($1 == "*") ? $2 : $1}')
+            if ! echo "$recent_ctxs" | grep -qFx "$ctx_name"; then
+                sorted_list+="$line"$'\n'
+            fi
+        done <<< "$all_contexts"
+
+        # Remove trailing empty lines
+        sorted_list=$(echo "$sorted_list" | sed '/^$/d')
+    else
+        sorted_list="$all_contexts"
+    fi
+
+    # Display with fzf and extract context name
+    ctx=$(printf "%s\n%s" "$header" "$sorted_list" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select context: " | awk '{print ($1 == "*") ? $2 : $1}')
+
+    # Log selection to history
+    if [[ -n "$ctx" ]]; then
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        echo "$timestamp  $ctx" >> "$history_file"
+    fi
+
+    echo "$ctx"
+}
+
 # Describe a pod interactively
 # Lists pods via fzf, then shows describe output in less (starting from bottom)
 kpod() {
@@ -132,6 +193,21 @@ klogsf() {
     pod=$(_kfzf_pod "$@")
     if [[ -n "$pod" ]]; then
         kubectl logs -f "$pod" "$@"
+    fi
+}
+
+# Follow pod logs with context selection (pick context first, then pod)
+# Uses MRU sorting for context selection
+klogsfc() {
+    local ctx pod
+    ctx=$(_kfzf_context_mru)
+    [[ -z "$ctx" ]] && return
+
+    # Then, select a pod from that context
+    pod=$(kubectl get pods --context="$ctx" --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --prompt="Select pod ($ctx): " | awk '{print $1}')
+    if [[ -n "$pod" ]]; then
+        echo "Following logs for $pod in context $ctx..."
+        kubectl logs -f "$pod" --context="$ctx" "$@"
     fi
 }
 
@@ -477,9 +553,39 @@ knodepods() {
     fi
 }
 
-# Watch pods (auto-refresh)
+# Watch pods (auto-refresh, auto-stops after 2 hours if gtimeout available)
+# Use --filter "string" to show only pods containing "string" (header always shown)
 kwatch() {
-    watch --color -n 2 "kubecolor get pods --force-colors $*"
+    local filter=""
+    local args=()
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --filter)
+                filter="$2"
+                shift 2
+                ;;
+            *)
+                args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    local cmd
+    if [[ -n "$filter" ]]; then
+        # Keep header line (NR==1) and lines containing the filter string
+        cmd="kubecolor get pods --force-colors ${args[*]} | awk -v f=\"$filter\" 'NR==1 || index(\$0, f)'"
+    else
+        cmd="kubecolor get pods --force-colors ${args[*]}"
+    fi
+
+    if command -v gtimeout &> /dev/null; then
+        gtimeout 2h watch --color -n 5 "$cmd"
+    else
+        watch --color -n 5 "$cmd"
+    fi
 }
 
 # Find pods by image name
@@ -506,7 +612,7 @@ kall() {
 # Use Tab to mark multiple items, Enter to confirm
 kdel() {
     local resource items
-    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\ncronjob\nreplicaset\nprovreq" | fzf --height=90% --reverse --prompt="Select resource type: ")
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\njobset\ncronjob\nreplicaset\nprovreq" | fzf --height=90% --reverse --prompt="Select resource type: ")
     if [[ -n "$resource" ]]; then
         echo "Use Tab to select multiple, Enter to confirm deletion"
         items=$(kubectl get "$resource" --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --multi --prompt="Select $resource(s) to DELETE: " | awk '{print $1}')
@@ -517,6 +623,32 @@ kdel() {
             read confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 echo "$items" | xargs -I {} kubectl delete "$resource" {} "$@"
+            else
+                echo "Cancelled."
+            fi
+        fi
+    fi
+}
+
+# Delete resources with context selection (pick context first)
+# Uses MRU sorting for context selection
+# Use Tab to mark multiple items, Enter to confirm
+kdelc() {
+    local ctx resource items
+    ctx=$(_kfzf_context_mru)
+    [[ -z "$ctx" ]] && return
+
+    resource=$(echo -e "pod\ndeployment\nservice\nconfigmap\nsecret\ningress\npvc\nstatefulset\ndaemonset\njob\njobset\ncronjob\nreplicaset\nprovreq" | fzf --height=90% --reverse --prompt="Select resource type ($ctx): ")
+    if [[ -n "$resource" ]]; then
+        echo "Use Tab to select multiple, Enter to confirm deletion"
+        items=$(kubectl get "$resource" --context="$ctx" --force-colors "$@" | fzf --ansi --height=90% --reverse --header-lines=1 --multi --prompt="Select $resource(s) to DELETE: " | awk '{print $1}')
+        if [[ -n "$items" ]]; then
+            echo "Will delete the following $resource(s) in context $ctx:"
+            echo "$items"
+            echo -n "Confirm? (y/N): "
+            read confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                echo "$items" | xargs -I {} kubectl delete "$resource" {} --context="$ctx" "$@"
             else
                 echo "Cancelled."
             fi
@@ -762,6 +894,78 @@ kcontexthistory() {
         tail -${1:-20} "$KUBE_CONTEXT_HISTORY"
     else
         echo "No context history found"
+    fi
+}
+
+# Interactive context history - shows recent contexts with details, select to switch
+khistory() {
+    if [[ ! -f "$KUBE_CONTEXT_HISTORY" ]]; then
+        echo "No context history found"
+        return 1
+    fi
+
+    local project
+    project=$(gcloud config get-value project 2>/dev/null)
+
+    # Get unique contexts from history (most recent first), limit to last 20
+    local contexts
+    contexts=$(tail -r "$KUBE_CONTEXT_HISTORY" | awk '{print $3}' | awk '!seen[$0]++' | head -20)
+
+    if [[ -z "$contexts" ]]; then
+        echo "No contexts in history"
+        return 1
+    fi
+
+    echo "Fetching cluster details..."
+
+    # Build a lookup table of cluster info from gcloud
+    local cluster_info
+    cluster_info=$(gcloud container clusters list --project "$project" --format="table[no-heading](name,location,status,currentNodeCount)" 2>/dev/null)
+
+    # Build display list with details
+    local display_list=""
+    while IFS= read -r ctx; do
+        [[ -z "$ctx" ]] && continue
+
+        # Parse GKE context name: gke_project_zone_cluster
+        if [[ "$ctx" =~ ^gke_(.+)_(.+)_(.+)$ ]]; then
+            local ctx_project="${match[1]}"
+            local ctx_zone="${match[2]}"
+            local ctx_cluster="${match[3]}"
+
+            # Look up cluster info
+            local info=$(echo "$cluster_info" | grep -E "^${ctx_cluster}\s+${ctx_zone}\s" | head -1)
+            if [[ -n "$info" ]]; then
+                local cstatus=$(echo "$info" | awk '{print $3}')
+                local nodes=$(echo "$info" | awk '{print $4}')
+                display_list+="${ctx_cluster}\t${ctx_zone}\t${cstatus}\t${nodes}\t${ctx}\n"
+            else
+                # Cluster might be deleted or in different project
+                display_list+="${ctx_cluster}\t${ctx_zone}\t(unknown)\t-\t${ctx}\n"
+            fi
+        else
+            # Non-GKE context
+            display_list+="${ctx}\t-\t-\t-\t${ctx}\n"
+        fi
+    done <<< "$contexts"
+
+    # Display with fzf
+    local selection
+    selection=$(echo -e "$display_list" | column -t -s $'\t' | \
+        fzf --height=90% --reverse \
+            --header="CLUSTER                         ZONE                STATUS     NODES" \
+            --prompt="Select context: " \
+            --with-nth=1,2,3,4)
+
+    if [[ -n "$selection" ]]; then
+        # Extract the full context name (last column)
+        local ctx=$(echo -e "$display_list" | grep -F "$(echo "$selection" | awk '{print $1}')" | head -1 | awk -F'\t' '{print $NF}')
+
+        if [[ -n "$ctx" ]]; then
+            echo "Switching to context: $ctx"
+            kubectl config use-context "$ctx"
+            _klog_context "$ctx"
+        fi
     fi
 }
 
