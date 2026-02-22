@@ -22,12 +22,20 @@ EOF
     fi
 }
 
-# Helper: Get hosts from SSH config (excluding wildcards)
+# Helper: Get hosts from SSH config and GCE instances
 _mfzf_ssh_hosts() {
-    grep -E "^Host " ~/.ssh/config 2>/dev/null \
-        | awk '{print $2}' \
-        | grep -v '[*?]' \
-        | fzf --height=90% --reverse --prompt="Select remote host: "
+    local project
+    project=$(gcloud config get-value project 2>/dev/null)
+    {
+        # SSH config hosts (excluding wildcards)
+        grep -E "^Host " ~/.ssh/config 2>/dev/null \
+            | awk '{print $2}' \
+            | grep -v '[*?]'
+        # GCE instances (requires gcloud CLI)
+        # Format: name.zone.project (compatible with gcloud compute config-ssh)
+        gcloud compute instances list --format='value(name,zone.basename())' 2>/dev/null \
+            | awk -v proj="$project" '{print $1"."$2"."proj}'
+    } | sort -u | fzf --height=90% --reverse --prompt="Select remote host: "
 }
 
 # Helper: Select a directory under home using fzf
