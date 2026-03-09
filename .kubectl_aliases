@@ -50,7 +50,7 @@ kcp	Copy file from pod
 kpodip	Get pod IP
 kpodnode	Get node where pod runs
 knodepods	List pods on a node
-kwatch	Watch pods (--filter "str" to filter)
+kwatch	Watch pods (-c context, --filter "str")
 kimage	Find pods by image name
 kall	Overview (pods + svc + deploy)
 kdesca	Describe any resource (all types in one view)
@@ -555,8 +555,10 @@ knodepods() {
 
 # Watch pods (auto-refresh, auto-stops after 2 hours if gtimeout available)
 # Use --filter "string" to show only pods containing "string" (header always shown)
+# Use -c or --context to interactively select a context first
 kwatch() {
     local filter=""
+    local ctx=""
     local args=()
 
     # Parse arguments
@@ -566,12 +568,23 @@ kwatch() {
                 filter="$2"
                 shift 2
                 ;;
+            -c|--context)
+                ctx=$(_kfzf_context_mru)
+                [[ -z "$ctx" ]] && return
+                shift
+                ;;
             *)
                 args+=("$1")
                 shift
                 ;;
         esac
     done
+
+    # Add context flag if selected
+    if [[ -n "$ctx" ]]; then
+        args+=("--context=$ctx")
+        echo "Watching pods in context: $ctx"
+    fi
 
     local cmd
     if [[ -n "$filter" ]]; then
